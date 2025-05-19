@@ -117,7 +117,7 @@ void OLED_ShowNum(u8 x, u8 y, u32 num, u8 len, u8 size1) {
         else {
             OLED_ShowChar(x + (size1 / 2) * t, y, temp + '0', size1);
         }
-  }
+    }
 }
 
 void OLED_ShowChinese(u8 x, u8 y, u8 num, u8 size1) {
