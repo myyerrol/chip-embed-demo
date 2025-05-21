@@ -44,6 +44,9 @@
 #define OLED_DISPLAY_NORMAL 0
 #define OLED_DISPLAY_INVERT 1
 
+#define OLED_DISPLAY_W 128
+#define OLED_DISPLAY_H 64
+
 #define u8  uint8_t
 #define u32 uint32_t
 
