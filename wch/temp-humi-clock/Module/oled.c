@@ -62,7 +62,7 @@ void OLED_ShowChar(u8 x, u8 y, u8 chr, u8 size1) {
     u8 i, m, temp, size2, chr1;
     u8 y0 = y;
     size2 = (size1 / 8 + ((size1 % 8) ? 1 : 0)) * (size1 / 2);
-    chr1=chr-' ';
+    chr1 = chr - ' ';
     for (i = 0; i < size2; i++) {
         if (size1==12) {
             temp = asc2_1206[chr1][i];
