@@ -16,7 +16,8 @@
 void    DHT22_Init(GPIOMode_TypeDef mode);
 uint8_t DHT22_START(void);
 uint8_t DHT22_GetDataOne(void);
-uint8_t DHT22_GetDataAll(uint8_t *temp_int, uint8_t *temp_dec,
+uint8_t DHT22_GetDataAll(uint8_t *temp_sig,
+                         uint8_t *temp_int, uint8_t *temp_dec,
                          uint8_t *humi_int, uint8_t *humi_dec);
 
 #endif

@@ -92,7 +92,8 @@ uint8_t DHT22_GetDataOne(void) {
  *
  * @return  Is data valid.
  */
-uint8_t DHT22_GetDataAll(uint8_t *temp_int, uint8_t *temp_dec,
+uint8_t DHT22_GetDataAll(uint8_t *temp_sig,
+                         uint8_t *temp_int, uint8_t *temp_dec,
                          uint8_t *humi_int, uint8_t *humi_dec) {
     uint8_t buf[5] = {0};
 
@@ -108,15 +109,26 @@ uint8_t DHT22_GetDataAll(uint8_t *temp_int, uint8_t *temp_dec,
         // Checksum.
         buf[4] = DHT22_GetDataOne();
     }
+    // buf[0] = 0;
+    // buf[1] = 0;
+    // buf[2] = 0x80;
+    // buf[3] = 0x65;
+    // buf[4] = 0xE5;
     // Calculate temperature and huymidity.
     if (buf[0] + buf[1] + buf[2] + buf[3] == buf[4]) {
+        *temp_sig = '+';
+        if (buf[2] & 0x80) {
+            buf[2] &= ~0x80;
+            *temp_sig = '-';
+        }
         *temp_int = ((buf[2] << 8) + buf[3]) / 10;
         *temp_dec = ((buf[2] << 8) + buf[3]) % 10;
         *humi_int = ((buf[0] << 8) + buf[1]) / 10;
         *humi_dec = ((buf[0] << 8) + buf[1]) % 10;
 #ifdef DHT22_DEBUG
-        printf("Temp: %d.%d¡ãC  Humi: %d.%d%%RH\n", *temp_int, *temp_dec,
-                                                   *humi_int, *humi_dec);
+        printf("Temp: %c%d.%d¡ãC  Humi: %d.%d%%RH\n", *temp_sig,
+                                                     *temp_int, *temp_dec,
+                                                     *humi_int, *humi_dec);
 #endif
         return 1;
     }
