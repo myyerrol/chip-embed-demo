@@ -3,6 +3,8 @@
 
 #include <debug.h>
 
+#define DHT22_DEBUG
+
 #define DHT22_PIN                             GPIO_Pin_4
 #define DHT22_SPD                             GPIO_Speed_30MHz
 #define DHT22_PORT                            GPIOD
@@ -14,6 +16,7 @@
 void    DHT22_Init(GPIOMode_TypeDef mode);
 uint8_t DHT22_START(void);
 uint8_t DHT22_GetDataOne(void);
-uint8_t DHT22_GetDataAll(uint8_t *temp, uint8_t *humi);
+uint8_t DHT22_GetDataAll(uint8_t *temp_int, uint8_t *temp_dec,
+                         uint8_t *humi_int, uint8_t *humi_dec);
 
 #endif
