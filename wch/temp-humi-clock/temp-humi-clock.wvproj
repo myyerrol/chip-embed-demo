@@ -141,7 +141,8 @@
 							"${project}/Debug",
 							"${project}/Core",
 							"${project}/User",
-							"${project}/Peripheral/inc"
+							"${project}/Peripheral/inc",
+							"${project}/Module"
 						],
 						"include_system_paths": [],
 						"include_files": []
@@ -589,11 +590,11 @@
 		]
 	},
 	"flashConfig": {
-		"mcutype": "CH32V003",
+		"mcutype": "CH32V00x",
 		"address": "0x08000000",
 		"target_path": "obj/temp-humi-clock.hex",
 		"clkSpeed": "High",
-		"debug_interface_mode": "",
+		"debug_interface_mode": "1-wire serial",
 		"erase": true,
 		"program": true,
 		"verify": true,
@@ -670,7 +671,7 @@
 			"showDebugOutputTimestamps": true
 		},
 		"reserve": {
-			"PROGRAM_NAME": "obj\\temp-humi-clock.elf",
+			"PROGRAM_NAME": "obj/temp-humi-clock.elf",
 			"PROJECT_ATTR": "temp-humi-clock",
 			"PROJECT_BUILD_CONFIG_AUTO_ATTR": true,
 			"PROJECT_BUILD_CONFIG_ID_ATTR": "",

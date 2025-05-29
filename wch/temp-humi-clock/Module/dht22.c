@@ -29,20 +29,27 @@ void DHT22_Init(GPIOMode_TypeDef mode) {
  * @return  Is DHT22 ready.
  */
 uint8_t DHT22_START(void) {
-
+    // Master sends a read request by pulling the bus low for 0.8ms-20ms
+    // (typical is 1ms).
     DHT22_Init(GPIO_Mode_Out_PP);
     DHT22_WR_DATA_0;
     Delay_Ms(1);
+    // Master releases the bus by pulling the bus high for 25us-45us
+    // (typical is 30us).
     DHT22_WR_DATA_1;
     Delay_Us(30);
 
+    // Slave performs a read response operation.
     DHT22_Init(GPIO_Mode_IN_FLOATING);
-
     if (!DHT22_RD_DATA) {
+        // Slave sends a low level of 80us as a response signal.
         while (!DHT22_RD_DATA);
+        // Slave sends a high level of 80us to notify that it is ready to
+        // receive data.
         while ( DHT22_RD_DATA);
         return 1;
     }
+
     return 0;
 }
 
@@ -56,15 +63,21 @@ uint8_t DHT22_START(void) {
  * @return  data.
  */
 uint8_t DHT22_GetDataOne(void) {
-    uint8_t temp = 0;
+    uint8_t data = 0;
+
     for (uint8_t i = 0; i < 8; i++) {
-        temp <<= 1;
+        data <<= 1;
+        // Wait for 50us read data preparation cycle.
         while (!DHT22_RD_DATA);
+        // If after a delay of 26-28us, the bus is 0, the data is 0, and the
+        // bus is 1, the data is 1.
         Delay_Us(26);
-        DHT22_RD_DATA ? (temp |= 0x01) : (temp &= ~0x01);
+        DHT22_RD_DATA ? (data |= 0x01) : (data &= ~0x01);
+        // Wait for data to be pulled low (only for the case where the data is 1)
         while (DHT22_RD_DATA);
     }
-    return temp;
+
+    return data;
 }
 
 /******************************************************************************
@@ -79,13 +92,20 @@ uint8_t DHT22_GetDataOne(void) {
  */
 uint8_t DHT22_GetDataAll(uint8_t *temp, uint8_t *humi) {
     uint8_t buf[5] = {0};
+
     if (DHT22_START()) {
+        // High 8bit data of huymidity data.
         buf[0] = DHT22_GetDataOne();
+        // Low  8bit data of huymidity data.
         buf[1] = DHT22_GetDataOne();
+        // High 8bit data of temperature data.
         buf[2] = DHT22_GetDataOne();
+        // Low  8bit data of temperature data.
         buf[3] = DHT22_GetDataOne();
+        // Checksum.
         buf[4] = DHT22_GetDataOne();
     }
+    // Calculate temperature and huymidity.
     if (buf[0] + buf[1] + buf[2] + buf[3] == buf[4]) {
         *temp = ((buf[2] << 8) + buf[3]) / 10;
         *humi = ((buf[0] << 8) + buf[1]) / 10;
