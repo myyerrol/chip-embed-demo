@@ -113,6 +113,7 @@
 int main(void) {
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
     SystemCoreClockUpdate();
+    Delay_Init();
     USART_Printf_Init(115200);
 
     Delay_Ms(2000);
@@ -120,7 +121,7 @@ int main(void) {
     uint8_t DHT22_Buf[5];
     while (1) {
         if (DHT22_GetDataAll(DHT22_Buf)) {
-            printf("Temp: %d.%d Humi: %d.%d\n", DHT22_Buf[2], DHT22_Buf[3], DHT22_Buf[0], DHT22_Buf[1]);
+            printf("Temp: %d.%d   Humi: %d.%d\n", DHT22_Buf[2], DHT22_Buf[3], DHT22_Buf[0], DHT22_Buf[1]);
         }
         Delay_Ms(2000);
     }
