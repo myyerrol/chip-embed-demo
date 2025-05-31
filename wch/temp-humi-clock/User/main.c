@@ -6,7 +6,7 @@
  * Description        : Main program body.
  *********************************************************************************
  * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for 
+ * Attention: This software (modified or not) and binary are used for
  * microcontroller manufactured by Nanjing Qinheng Microelectronics.
  *******************************************************************************/
 
@@ -114,12 +114,12 @@ int main(void) {
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
     SystemCoreClockUpdate();
     USART_Printf_Init(115200);
-    
+
     Delay_Ms(2000);
 
     uint8_t DHT22_Buf[5];
     while (1) {
-        if (DHT22_Get_Temp_Humi_Data(DHT22_Buf)) {
+        if (DHT22_GetDataAll(DHT22_Buf)) {
             printf("Temp: %d.%d Humi: %d.%d\n", DHT22_Buf[2], DHT22_Buf[3], DHT22_Buf[0], DHT22_Buf[1]);
         }
         Delay_Ms(2000);
