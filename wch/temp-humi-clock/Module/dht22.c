@@ -1,5 +1,14 @@
 #include <dht22.h>
 
+/******************************************************************************
+ * @fn      DHT22_Init
+ *
+ * @brief   Initializes DHT22 gpio register.
+ *
+ * @param   mode - input (floating) or output (push-pull).
+ *
+ * @return  none
+ */
 void DHT22_Init(GPIOMode_TypeDef mode) {
     GPIO_InitTypeDef GPIO_InitStructure;
 
@@ -10,7 +19,17 @@ void DHT22_Init(GPIOMode_TypeDef mode) {
     GPIO_Init(DHT22_PORT, &GPIO_InitStructure);
 }
 
+/******************************************************************************
+ * @fn      DHT22_Start
+ *
+ * @brief   Start a DHT22 read operation.
+ *
+ * @param   none
+ *
+ * @return  Is DHT22 ready.
+ */
 uint8_t DHT22_START(void) {
+
     DHT22_Init(GPIO_Mode_Out_PP);
     DHT22_WR_DATA_0;
     Delay_Ms(1);
@@ -27,6 +46,15 @@ uint8_t DHT22_START(void) {
     return 0;
 }
 
+/******************************************************************************
+ * @fn      DHT22_GetDataOne
+ *
+ * @brief   Get one byte (8 bit) data from DHT22.
+ *
+ * @param   none
+ *
+ * @return  data.
+ */
 uint8_t DHT22_GetDataOne(void) {
     uint8_t temp = 0;
     for (uint8_t i = 0; i < 8; i++) {
@@ -39,6 +67,16 @@ uint8_t DHT22_GetDataOne(void) {
     return temp;
 }
 
+/******************************************************************************
+ * @fn      DHT22_GetDataAll
+ *
+ * @brief   Get all bytes (40 bit) data from DHT22.
+ *
+ * @param   *temp - temperature data (return by pointer)
+ *          *humi - huymidity   data (return by pointer)
+ *
+ * @return  Is data valid.
+ */
 uint8_t DHT22_GetDataAll(uint8_t *temp, uint8_t *humi) {
     uint8_t buf[5] = {0};
     if (DHT22_START()) {
@@ -54,8 +92,6 @@ uint8_t DHT22_GetDataAll(uint8_t *temp, uint8_t *humi) {
         return 1;
     }
     else {
-        *temp = 0;
-        *humi = 0;
-        return  0;
+        return 0;
     }
 }
