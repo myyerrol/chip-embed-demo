@@ -19,9 +19,7 @@ uint8_t DHT22_START(void) {
 
     DHT22_Init(GPIO_Mode_IN_FLOATING);
 
-    uint8_t bit = DHT22_RD_DATA;
-
-    if (!bit) {
+    if (!DHT22_RD_DATA) {
         while (!DHT22_RD_DATA);
         while ( DHT22_RD_DATA);
         return 1;
@@ -34,14 +32,15 @@ uint8_t DHT22_GetDataOne(void) {
     for (uint8_t i = 0; i < 8; i++) {
         temp <<= 1;
         while (!DHT22_RD_DATA);
-        Delay_Us(28);
+        Delay_Us(26);
         DHT22_RD_DATA ? (temp |= 0x01) : (temp &= ~0x01);
         while (DHT22_RD_DATA);
     }
     return temp;
 }
 
-uint8_t DHT22_GetDataAll(uint8_t buf[]) {
+uint8_t DHT22_GetDataAll(uint8_t *temp, uint8_t *humi) {
+    uint8_t buf[5] = {0};
     if (DHT22_START()) {
         buf[0] = DHT22_GetDataOne();
         buf[1] = DHT22_GetDataOne();
@@ -49,5 +48,14 @@ uint8_t DHT22_GetDataAll(uint8_t buf[]) {
         buf[3] = DHT22_GetDataOne();
         buf[4] = DHT22_GetDataOne();
     }
-    return (buf[0] + buf[1] + buf[2] + buf[3] == buf[4]) ? 1 : 0;
+    if (buf[0] + buf[1] + buf[2] + buf[3] == buf[4]) {
+        *temp = ((buf[2] << 8) + buf[3]) / 10;
+        *humi = ((buf[0] << 8) + buf[1]) / 10;
+        return 1;
+    }
+    else {
+        *temp = 0;
+        *humi = 0;
+        return  0;
+    }
 }
