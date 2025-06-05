@@ -73,8 +73,8 @@ uint8_t DHT22_GetDataAll(uint8_t *temp_sig,
         *humi_int = ((buf[0] << 8) + buf[1]) / 10;
         *humi_dec = ((buf[0] << 8) + buf[1]) % 10;
 
-        sprintf(temp, "%c%d.%d¡ãC", *temp_sig, *temp_int, *temp_dec);
-        sprintf(humi, " %d.%d%%RH",           *humi_int, *humi_dec);
+        sprintf(temp, "%c%d.%d", *temp_sig, *temp_int, *temp_dec);
+        sprintf(humi, "%d.%d",              *humi_int, *humi_dec);
 
 #ifdef DHT22_DEBUG
         printf("Temp: %s  Humi: %s\n", temp, humi);

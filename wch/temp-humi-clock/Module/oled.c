@@ -64,14 +64,14 @@ void OLED_ShowChar(u8 x, u8 y, u8 chr, u8 size1) {
     size2 = (size1 / 8 + ((size1 % 8) ? 1 : 0)) * (size1 / 2);
     chr1 = chr - ' ';
     for (i = 0; i < size2; i++) {
-        if (size1==12) {
-            temp = asc2_1206[chr1][i];
+        if (size1 == 12) {
+            temp = ascii_1206[chr1][i];
         }
-        else if (size1==16) {
-            temp = asc2_1608[chr1][i];
+        else if (size1 == 16) {
+            temp = ascii_1608[chr1][i];
         }
-        else if (size1==24) {
-            temp = asc2_2412[chr1][i];
+        else if (size1 == 24) {
+            temp = ascii_2412[chr1][i];
         }
         else {
             return;
@@ -121,24 +121,27 @@ void OLED_ShowNum(u8 x, u8 y, u32 num, u8 len, u8 size1) {
 }
 
 void OLED_ShowChinese(u8 x, u8 y, u8 num, u8 size1) {
-    u8 i, m, n = 0, temp, chr1;
+    u8 i, m, n = 0, temp = 0, chr1;
     u8 x0 = x, y0 = y;
-    u8 size3 = size1 / 8;
+    // 计算除数
+    u8 div = size1 / 2;;
+    // 计算1个中文取多少个数组元素（这个可以考虑固定为2）
+    u8 size3 = size1 / div;
     while (size3--) {
-        chr1 = num * size1 / 8 + n;
+        chr1 = num * size1 / div + n;
         n++;
         for(i = 0; i < size1; i++) {
-            if (size1 == 16) {
-                temp = Hzk1[chr1][i];
+            if (size1 == 12) {
+                temp = zh_1212[chr1][i];
+            }
+            else if (size1 == 16) {
+                // temp = zh_1616[chr1][i];
             }
             else if (size1 == 24) {
-                // temp = Hzk2[chr1][i];
             }
             else if (size1 == 32) {
-                // temp=Hzk3[chr1][i];
             }
             else if (size1 == 64) {
-                // temp = Hzk4[chr1][i];
             }
             else {
                 return;
@@ -151,7 +154,7 @@ void OLED_ShowChinese(u8 x, u8 y, u8 num, u8 size1) {
                 else {
                     OLED_ClearPoint(x, y);
                 }
-                temp>>=1;
+                temp >>= 1;
                 y++;
             }
             x++;
