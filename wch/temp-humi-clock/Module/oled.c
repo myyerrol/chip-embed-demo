@@ -123,9 +123,7 @@ void OLED_ShowNum(u8 x, u8 y, u32 num, u8 len, u8 size1) {
 void OLED_ShowChinese(u8 x, u8 y, u8 num, u8 size1) {
     u8 i, m, n = 0, temp = 0, chr1;
     u8 x0 = x, y0 = y;
-    // 计算除数
     u8 div = size1 / 2;;
-    // 计算1个中文取多少个数组元素（这个可以考虑固定为2）
     u8 size3 = size1 / div;
     while (size3--) {
         chr1 = num * size1 / div + n;
@@ -135,7 +133,6 @@ void OLED_ShowChinese(u8 x, u8 y, u8 num, u8 size1) {
                 temp = zh_1212[chr1][i];
             }
             else if (size1 == 16) {
-                // temp = zh_1616[chr1][i];
             }
             else if (size1 == 24) {
             }
