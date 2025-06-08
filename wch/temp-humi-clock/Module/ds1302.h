@@ -60,9 +60,12 @@
 #define DS1302_WR_RST_1 GPIO_SetBits         (DS1302_PORT, DS1302_PIN_RST)
 #define DS1302_WR_RST_0 GPIO_ResetBits       (DS1302_PORT, DS1302_PIN_RST)
 
-#define BOOL uint8_t
+#define BOOL  uint8_t
 #define TRUE  1
 #define FALSE 0
+
+#define BCD2DEC(bcd) ((uint8_t)((10 * (((bcd) & 0xF0) >> 4)) + ((bcd) & 0x0F)))
+#define DEC2BCD(dec) (((uint8_t)((dec) / 10) << 4) | ((dec) % 10))
 
 typedef struct {
     uint16_t DS1302_Year;  // 2000 - 2099

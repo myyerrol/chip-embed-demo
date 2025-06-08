@@ -3,9 +3,9 @@
 
 #include <debug.h>
 
-#define DHT22_DEBUG
+// #define DHT22_DEBUG
 
-#define DHT22_PIN  GPIO_Pin_4
+#define DHT22_PIN  GPIO_Pin_2
 #define DHT22_SPD  GPIO_Speed_30MHz
 #define DHT22_PORT GPIOD
 #define DHT22_APB2 RCC_APB2Periph_GPIOD

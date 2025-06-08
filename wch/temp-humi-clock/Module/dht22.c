@@ -2,12 +2,9 @@
 
 /******************************************************************************
  * @fn      DHT22_GetDataOne
- *
  * @brief   Get one byte (8 bit) data from DHT22.
- *
- * @param   none
- *
- * @return  data.
+ * @param   None.
+ * @return  Data.
  */
 uint8_t DHT22_GetDataOne(void) {
     uint8_t data = 0;
@@ -29,16 +26,13 @@ uint8_t DHT22_GetDataOne(void) {
 
 /******************************************************************************
  * @fn      DHT22_GetDataAll
- *
  * @brief   Get all bytes (40 bit) data from DHT22.
- *
- * @param   *temp_int - temperature integer data
- *          *temp_dec - temperature integer data
- *          *humi_int - huymidity   decimal data
- *          *humi_dec - huymidity   decimal data
- *          *temp     - temperature string
- *          *humi     - huymidity   string
- *
+ * @param   *temp_int - Temperature integer data
+ *          *temp_dec - Temperature integer data
+ *          *humi_int - Huymidity   decimal data
+ *          *humi_dec - Huymidity   decimal data
+ *          *temp     - Temperature string
+ *          *humi     - Huymidity   string
  * @return  Is data valid.
  */
 uint8_t DHT22_GetDataAll(uint8_t *temp_sig,
@@ -88,12 +82,9 @@ uint8_t DHT22_GetDataAll(uint8_t *temp_sig,
 
 /******************************************************************************
  * @fn      DHT22_Init
- *
- * @brief   Initializes DHT22 gpio register.
- *
- * @param   mode - input (floating) or output (push-pull).
- *
- * @return  none
+ * @brief   Initializes the pin.
+ * @param   mode - Input (floating) or output (push-pull).
+ * @return  None.
  */
 void DHT22_Init(GPIOMode_TypeDef mode) {
     GPIO_InitTypeDef GPIO_InitStructure;
@@ -107,11 +98,8 @@ void DHT22_Init(GPIOMode_TypeDef mode) {
 
 /******************************************************************************
  * @fn      DHT22_Start
- *
  * @brief   Start a DHT22 read operation.
- *
- * @param   none
- *
+ * @param   None.
  * @return  Is DHT22 ready.
  */
 uint8_t DHT22_START(void) {

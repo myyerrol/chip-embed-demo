@@ -21,7 +21,7 @@
 
 #define OLED_SPD   GPIO_Speed_50MHz
 #define OLED_PORT  GPIOC
-#define OLED_APB2 RCC_APB2Periph_GPIOC
+#define OLED_APB2  RCC_APB2Periph_GPIOC
 
 #ifdef OLED_MODE_SPI
 #define OLED_WR_SCK_1  GPIO_SetBits  (OLED_PORT, OLED_PIN_SCK )
