@@ -80,6 +80,7 @@ static void DS1302_SetRdMode(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_InitStructure.GPIO_Pin   = DS1302_PIN_DAT;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IN_FLOATING;
+    GPIO_InitStructure.GPIO_Speed = DS1302_SPD;
     GPIO_Init(DS1302_PORT, &GPIO_InitStructure);
 }
 
@@ -93,6 +94,7 @@ static void DS1302_SetWrMode(void) {
     GPIO_InitTypeDef GPIO_InitStructure;
     GPIO_InitStructure.GPIO_Pin   = DS1302_PIN_DAT;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = DS1302_SPD;
     GPIO_Init(DS1302_PORT, &GPIO_InitStructure);
 }
 
@@ -104,12 +106,12 @@ static void DS1302_SetWrMode(void) {
  * @return  None.
  */
 static void DS1302_InitPin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin) {
-    GPIO_InitTypeDef GPIO_InitStruct;
+    GPIO_InitTypeDef GPIO_InitStructure;
     RCC_APB2PeriphClockCmd(DS1302_APB2, ENABLE);
-    GPIO_InitStruct.GPIO_Pin   = GPIO_Pin;
-    GPIO_InitStruct.GPIO_Mode  = GPIO_Mode_Out_PP;
-    GPIO_InitStruct.GPIO_Speed = DS1302_SPD;
-    GPIO_Init(GPIOx, &GPIO_InitStruct);
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
+    GPIO_InitStructure.GPIO_Speed = DS1302_SPD;
+    GPIO_Init(GPIOx, &GPIO_InitStructure);
 }
 
 /******************************************************************************
@@ -366,7 +368,7 @@ void DS1302_SetTime(DS1302_InitTypeDef *DS1302_InitStructure) {
     DS1302_WrSingle(DS1302_WR_MON,  DEC2BCD(time.DS1302_Month));
     DS1302_WrSingle(DS1302_WR_DAY,  DEC2BCD(time.DS1302_Day));
     DS1302_WrSingle(DS1302_WR_DATE, DEC2BCD(time.DS1302_Date));
-    DS1302_WrSingle(DS1302_WR_HOUR, time.DS1302_Hour);
+    DS1302_WrSingle(DS1302_WR_HOUR,         time.DS1302_Hour);
     DS1302_WrSingle(DS1302_WR_MIN,  DEC2BCD(time.DS1302_Min));
     DS1302_WrSingle(DS1302_WR_SEC,  DEC2BCD(time.DS1302_Sec & 0x7F));
     DS1302_WrSingle(DS1302_WR_CTRL, 0x80);

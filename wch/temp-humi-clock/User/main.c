@@ -32,7 +32,7 @@ int main(void) {
 
 #ifdef DS1302_SETTIME
     DS1302_InitTypeDef time_struct = {
-        2025, 6, 8, 7, 1, 0, 12, 52, 00
+        2025, 6, 9, 1, 1, 0, 8, 52, 30
     };
     DS1302_SetTime(&time_struct);
 #else
