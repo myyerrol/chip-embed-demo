@@ -6,6 +6,10 @@
 		{
 			"name": "temp-humi-clock",
 			"path": "../temp-humi-clock"
+		},
+		{
+			"name": "bionic-6dof-arm",
+			"path": "../bionic-6dof-arm"
 		}
 	],
 	"settings": {

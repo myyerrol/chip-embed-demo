@@ -6,3 +6,5 @@ c:\Users\myyerrol\Workspaces\chip-embed-demo\wch\wch.wvsln:
 -rv:${eclipse_home}\toolchain\RISC-V Embedded GCC\bin
 c:\Users\myyerrol\Workspaces\chip-embed-demo\wch\temp-humi-clock
 ..\temp-humi-clock
+c:\Users\myyerrol\Workspaces\chip-embed-demo\wch\bionic-6dof-arm
+..\bionic-6dof-arm
