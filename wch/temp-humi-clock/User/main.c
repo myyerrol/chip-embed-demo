@@ -39,7 +39,7 @@ int main(void) {
     DS1302_InitTypeDef time_struct = {0};
 #endif
 
-    while(1) {
+    while (1) {
         DS1302_GetTime(&time_struct);
         sprintf(date, "%d-%02d-%02d",
                 time_struct.DS1302_Year,
