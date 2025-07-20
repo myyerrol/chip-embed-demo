@@ -54,7 +54,7 @@ void USARTx_CFG(void)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-    USART_InitStructure.USART_BaudRate = 115200;
+    USART_InitStructure.USART_BaudRate = 1000000;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
     USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -72,33 +72,48 @@ void USARTx_CFG(void)
  *
  * @return  none
  */
-int main(void)
-{
-    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
-    SystemCoreClockUpdate();
-    Delay_Init();
-#if (SDI_PRINT == SDI_PR_OPEN)
-    SDI_Printf_Enable();
-#else
-    USART_Printf_Init(115200);
-#endif
-    printf("SystemClk:%d\r\n",SystemCoreClock);
-    printf( "ChipID:%08x\r\n", DBGMCU_GetCHIPID() );
+// int main(void)
+// {
+//     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+//     SystemCoreClockUpdate();
+//     Delay_Init();
+// #if (SDI_PRINT == SDI_PR_OPEN)
+//     SDI_Printf_Enable();
+// #else
+//     USART_Printf_Init(115200);
+// #endif
+//     printf("SystemClk:%d\r\n",SystemCoreClock);
+//     printf( "ChipID:%08x\r\n", DBGMCU_GetCHIPID() );
 
+//     USARTx_CFG();
+
+//     while(1)
+//     {
+
+//         while(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET)
+//         {
+//             /* waiting for receiving finish */
+//         }
+//         val = (USART_ReceiveData(USART1));
+//         USART_SendData(USART1, ~val);
+//         while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET)
+//         {
+//             /* waiting for sending finish */
+//         }
+//     }
+// }
+
+#include <core.h>
+
+extern void setup(void);
+extern void examples(void);
+
+int main(void) {
+    CORE_Init();
     USARTx_CFG();
 
-    while(1)
-    {
-
-        while(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET)
-        {
-            /* waiting for receiving finish */
-        }
-        val = (USART_ReceiveData(USART1));
-        USART_SendData(USART1, ~val);
-        while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET)
-        {
-            /* waiting for sending finish */
-        }
+    setup();
+    while (1) {
+        examples();
     }
 }
