@@ -18,6 +18,11 @@
 				"parentLogicPath": "",
 				"type": "file",
 				"name": "*.wvproj"
+			},
+			{
+				"name": "core.h",
+				"parentLogicPath": "Init",
+				"type": "file"
 			}
 		],
 		"projectName": "temp-humi-clock",

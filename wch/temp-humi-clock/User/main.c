@@ -1,10 +1,22 @@
 #include <string.h>
 
-#include <core.h>
 #include <dht22.h>
 #include <ds1302.h>
-#include <oled.h>
-#include <oled_bmp.h>
+#include <ssd1309.h>
+
+void SYS_Init() {
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+    SystemCoreClockUpdate();
+    Delay_Init();
+    USART_Printf_Init(115200);
+    Delay_Ms(2000);
+}
+
+void MOD_Init() {
+    DHT22_Init(GPIO_Mode_Out_PP);
+    DS1302_Init();
+    SSD1309_Init();
+}
 
 /******************************************************************************
  * @fn      main
@@ -12,9 +24,8 @@
  * @return  None.
  */
 int main(void) {
-    CORE_Init();
-    OLED_Init();
-    DS1302_Init();
+    SYS_Init();
+    MOD_Init();
 
     uint8_t size = 12;
     char    date[10];
@@ -54,13 +65,13 @@ int main(void) {
                 time_struct.DS1302_Sec);
 
         size = 12;
-        OLED_ShowString(0, 0, date, size);
-        OLED_ShowChinese(OLED_DISPLAY_W - size * 3, 0, 3,    size);
-        OLED_ShowChinese(OLED_DISPLAY_W - size * 2, 0, 4,    size);
-        OLED_ShowChinese(OLED_DISPLAY_W - size * 1, 0, week, size);
+        SSD1309_ShowString(0, 0, date, size);
+        SSD1309_ShowChinese(SSD1309_DISPLAY_W - size * 3, 0, 3,    size);
+        SSD1309_ShowChinese(SSD1309_DISPLAY_W - size * 2, 0, 4,    size);
+        SSD1309_ShowChinese(SSD1309_DISPLAY_W - size * 1, 0, week, size);
 
         size = 24;
-        OLED_ShowString((OLED_DISPLAY_W - strlen(time) * size / 2) / 2,
+        SSD1309_ShowString((SSD1309_DISPLAY_W - strlen(time) * size / 2) / 2,
                          16,
                          time,
                          size);
@@ -71,14 +82,14 @@ int main(void) {
                           temp,
                           humi);
         size = 12;
-        OLED_ShowChinese(0,             (OLED_DISPLAY_H - size - 4), 11,   size);
-        OLED_ShowChinese(0 + size * 1,  (OLED_DISPLAY_H - size - 4), 13,   size);
-        OLED_ShowString (0 + size * 2,  (OLED_DISPLAY_H - size - 4), temp, size);
-        OLED_ShowChinese(74,            (OLED_DISPLAY_H - size - 4), 12,   size);
-        OLED_ShowChinese(74 + size * 1, (OLED_DISPLAY_H - size - 4), 13,   size);
-        OLED_ShowString (74 + size * 2, (OLED_DISPLAY_H - size - 4), humi, size);
+        SSD1309_ShowChinese(0,             (SSD1309_DISPLAY_H - size - 4), 11,   size);
+        SSD1309_ShowChinese(0 + size * 1,  (SSD1309_DISPLAY_H - size - 4), 13,   size);
+        SSD1309_ShowString (0 + size * 2,  (SSD1309_DISPLAY_H - size - 4), temp, size);
+        SSD1309_ShowChinese(74,            (SSD1309_DISPLAY_H - size - 4), 12,   size);
+        SSD1309_ShowChinese(74 + size * 1, (SSD1309_DISPLAY_H - size - 4), 13,   size);
+        SSD1309_ShowString (74 + size * 2, (SSD1309_DISPLAY_H - size - 4), humi, size);
 
-        OLED_Refresh();
+        SSD1309_Refresh();
 
         Delay_Ms(1000);
     }
