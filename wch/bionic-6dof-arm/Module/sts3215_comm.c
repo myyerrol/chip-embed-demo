@@ -1,13 +1,6 @@
-/*
- * SCS.c
- * SCS串行舵机协议程序
- * 日期: 2025.6.30
- * 作者: txl
- */
- 
 #include <stdlib.h>
-#include "INST.h"
-#include "SCS.h"
+#include <sts3215_inst.h>
+#include <sts3215_comm.h>
 
 static uint8_t Level =1;//舵机返回等级1,默认写指令开启应答
 static uint8_t End = 0;//处理器大小端结构,默认小端存储格式
@@ -90,7 +83,7 @@ void writeBuf(uint8_t ID, uint8_t MemAddr, uint8_t *nDat, uint8_t nLen, uint8_t 
 		bBuf[3] = msgLen;
 		bBuf[5] = MemAddr;
 		writeSCS(bBuf, 6);
-		
+
 	}else{
 		bBuf[3] = msgLen;
 		writeSCS(bBuf, 5);
@@ -143,7 +136,7 @@ void syncWrite(uint8_t ID[], uint8_t IDN, uint8_t MemAddr, uint8_t *nDat, uint8_
 	uint8_t Sum = 0;
 	uint8_t bBuf[7];
 	uint8_t i, j;
-	
+
 	bBuf[0] = 0xff;
 	bBuf[1] = 0xff;
 	bBuf[2] = 0xfe;
@@ -151,7 +144,7 @@ void syncWrite(uint8_t ID[], uint8_t IDN, uint8_t MemAddr, uint8_t *nDat, uint8_
 	bBuf[4] = INST_SYNC_WRITE;
 	bBuf[5] = MemAddr;
 	bBuf[6] = nLen;
-	
+
 	rFlushSCS();
 	writeSCS(bBuf, 7);
 
@@ -252,7 +245,7 @@ int readByte(uint8_t ID, uint8_t MemAddr)
 
 //读2字节，超时返回-1
 int readWord(uint8_t ID, uint8_t MemAddr)
-{	
+{
 	uint8_t nDat[2];
 	int Size;
 	uint16_t wDat;
@@ -292,7 +285,7 @@ int	Ping(uint8_t ID)
 	calSum = ~(bBuf[0]+bBuf[1]+bBuf[2]);
 	if(calSum!=bBuf[3]){
 		u8Error = SCS_ERR_CRC_CMP;
-		return -1;			
+		return -1;
 	}
 	u8Status = bBuf[2];
 	return bBuf[0];
@@ -327,7 +320,7 @@ int	Reset(uint8_t ID)
 	calSum = ~(bBuf[0]+bBuf[1]+bBuf[2]);
 	if(calSum!=bBuf[3]){
 		u8Error = SCS_ERR_CRC_CMP;
-		return -1;			
+		return -1;
 	}
 	u8Status = bBuf[2];
 	return bBuf[0];
@@ -382,7 +375,7 @@ int	Ack(uint8_t ID)
 		calSum = ~(bBuf[0]+bBuf[1]+bBuf[2]);
 		if(calSum!=bBuf[3]){
 			u8Error = SCS_ERR_CRC_CMP;
-			return 0;			
+			return 0;
 		}
 		u8Status = bBuf[2];
 	}
@@ -410,7 +403,7 @@ int	syncReadPacketTx(uint8_t ID[], uint8_t IDN, uint8_t MemAddr, uint8_t nLen)
 	checkSum = ~checkSum;
 	writeByteSCS(checkSum);
 	wFlushSCS();
-	
+
 	syncReadRxBuffLen = readSCS(syncReadRxBuff, syncReadRxBuffMax);
 	return syncReadRxBuffLen;
 }

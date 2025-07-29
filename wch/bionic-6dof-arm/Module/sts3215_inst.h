@@ -1,9 +1,3 @@
-/*
- * INST.h
- * 飞特串行舵机协议指令定义
- * 日期: 2025.6.30
- * 作者: 
- */
 
 #ifndef _INST_H
 #define _INST_H

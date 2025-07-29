@@ -1,10 +1,3 @@
-/*
- * SCS.h
- * 飞特串行舵机通信协议程序
- * 日期: 2025.6.30
- * 作者: txl
- */
-
 #ifndef _SCS_H
 #define _SCS_H
 
@@ -47,7 +40,7 @@ extern uint8_t getEnd(void);
 extern void setLevel(uint8_t _Level);
 extern int getState(void);
 extern int getLastError(void);
-	
+
 //硬件接口函数
 extern int writeSCS(uint8_t *nDat, int nLen);
 extern int writeByteSCS(unsigned char bDat);

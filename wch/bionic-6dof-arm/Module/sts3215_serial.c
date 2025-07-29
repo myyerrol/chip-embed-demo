@@ -1,11 +1,5 @@
-/*
- * SCServo.c
- * 飞特舵机硬件接口层程序
- * 日期: 2024.12.2
- * 作者: txl
- */
 #include <stdint.h>
-#include <ch32v00x.h>
+#include <debug.h>
 
 uint8_t wBuf[128];
 uint8_t wLen = 0;

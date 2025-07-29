@@ -1,10 +1,3 @@
-/*
- * SMS_STS.h
- * 飞特SMS/STS系列串行舵机应用层程序
- * 日期: 2025.3.3
- * 作者: 
- */
-
 #ifndef _SMS_STS_H
 #define _SMS_STS_H
 
@@ -60,7 +53,6 @@
 #define SMS_STS_MOVING 66
 #define SMS_STS_PRESENT_CURRENT_L 69
 #define SMS_STS_PRESENT_CURRENT_H 70
-
 
 extern int WritePosEx(uint8_t ID, int16_t Position, uint16_t Speed, uint8_t ACC);//普通写位置指令
 extern int RegWritePosEx(uint8_t ID, int16_t Position, uint16_t Speed, uint8_t ACC);//异步写位置指令
