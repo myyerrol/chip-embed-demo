@@ -1,26 +1,3 @@
-/********************************** (C) COPYRIGHT *******************************
- * File Name          : main.c
- * Author             : WCH
- * Version            : V1.0.0
- * Date               : 2023/12/25
- * Description        : Main program body.
- *********************************************************************************
- * Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
- * Attention: This software (modified or not) and binary are used for
- * microcontroller manufactured by Nanjing Qinheng Microelectronics.
- *******************************************************************************/
-
-/*
- *@Note
- *Multiprocessor communication mode routine:
- *Master:USART1_Tx(PD5)\USART1_Rx(PD6).
- *This routine demonstrates that USART1 receives the data sent by CH341 and inverts
- *it and sends it (baud rate 115200).
- *
- *Hardware connection:PD5 -- Rx
- *                     PD6 -- Tx
- *
- */
 
 #include "debug.h"
 
@@ -65,55 +42,27 @@ void USARTx_CFG(void)
     USART_Cmd(USART1, ENABLE);
 }
 
-/*********************************************************************
- * @fn      main
- *
- * @brief   Main program.
- *
- * @return  none
- */
-// int main(void)
-// {
-//     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
-//     SystemCoreClockUpdate();
-//     Delay_Init();
-// #if (SDI_PRINT == SDI_PR_OPEN)
-//     SDI_Printf_Enable();
-// #else
-//     USART_Printf_Init(115200);
-// #endif
-//     printf("SystemClk:%d\r\n",SystemCoreClock);
-//     printf( "ChipID:%08x\r\n", DBGMCU_GetCHIPID() );
+void SYS_Init() {
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+    SystemCoreClockUpdate();
+    Delay_Init();
+    USART_Printf_Init(115200);
+    Delay_Ms(2000);
+}
 
-//     USARTx_CFG();
-
-//     while(1)
-//     {
-
-//         while(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET)
-//         {
-//             /* waiting for receiving finish */
-//         }
-//         val = (USART_ReceiveData(USART1));
-//         USART_SendData(USART1, ~val);
-//         while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET)
-//         {
-//             /* waiting for sending finish */
-//         }
-//     }
-// }
-
-#include <core.h>
+void MOD_Init() {
+    USARTx_CFG();
+}
 
 extern void setup(void);
 extern void examples(void);
 
 int main(void) {
-    CORE_Init();
-    USARTx_CFG();
+    SYS_Init();
+    MOD_Init();
 
     setup();
-    while (1) {
+    // while (1) {
         examples();
-    }
+    // }
 }

@@ -18,6 +18,11 @@
 				"parentLogicPath": "",
 				"type": "file",
 				"name": "*.wvproj"
+			},
+			{
+				"name": "core.h",
+				"parentLogicPath": "Module",
+				"type": "file"
 			}
 		],
 		"projectName": "bionic-6dof-arm",
