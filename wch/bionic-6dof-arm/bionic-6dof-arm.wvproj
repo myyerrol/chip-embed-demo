@@ -20,8 +20,53 @@
 				"name": "*.wvproj"
 			},
 			{
-				"name": "core.h",
 				"parentLogicPath": "Module",
+				"type": "file",
+				"name": "core.h"
+			},
+			{
+				"parentLogicPath": "Test",
+				"type": "file",
+				"name": "Ping.c"
+			},
+			{
+				"parentLogicPath": "Test",
+				"type": "file",
+				"name": "FeedBack.c"
+			},
+			{
+				"parentLogicPath": "Test",
+				"type": "file",
+				"name": "Broadcast.c"
+			},
+			{
+				"parentLogicPath": "Test",
+				"type": "file",
+				"name": "ProgramEprom.c"
+			},
+			{
+				"parentLogicPath": "Test",
+				"type": "file",
+				"name": "RegWritePos.c"
+			},
+			{
+				"parentLogicPath": "Test",
+				"type": "file",
+				"name": "SyncRead.c"
+			},
+			{
+				"parentLogicPath": "Test",
+				"type": "file",
+				"name": "WritePos.c"
+			},
+			{
+				"parentLogicPath": "Test",
+				"type": "file",
+				"name": "WriteSpe.c"
+			},
+			{
+				"name": "SyncWritePos.c",
+				"parentLogicPath": "Test",
 				"type": "file"
 			}
 		],

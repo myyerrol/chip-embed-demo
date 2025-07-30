@@ -2,486 +2,496 @@
 #include <sts3215_comm.h>
 #include <sts3215_serial.h>
 
-static uint8_t Level =1;//舵机返回等级1,默认写指令开启应答
-static uint8_t End = 0;//处理器大小端结构,默认小端存储格式
-static uint8_t u8Status;//舵机状态
-static uint8_t u8Error;//通信状态
-uint8_t syncReadRxPacketIndex;
-uint8_t syncReadRxPacketLen;
-uint8_t *syncReadRxPacket;
-uint8_t *syncReadRxBuff;
-uint16_t syncReadRxBuffLen;
-uint16_t syncReadRxBuffMax;
+uint8_t  g_level = 1;
+uint8_t  g_end   = 0;
+uint8_t  g_status_servo;
+uint8_t  g_status_comm;
 
-void setEnd(uint8_t _End)
-{
-	End = _End;
+uint8_t  g_read_sync_packet_idx;
+uint8_t  g_read_sync_packet_len;
+uint8_t *g_read_sync_packet;
+uint8_t *g_read_sync_buf;
+uint16_t g_read_sync_buf_len;
+uint16_t g_read_sync_buf_max;
+
+int STS3215_ReadByte1(uint8_t id, uint8_t mem_addr) {
+    uint8_t dat;
+    int size = STS3215_ReadNormal(id, mem_addr, &dat, 1);
+    if (size != 1) {
+        return -1;
+    }
+    else {
+        return dat;
+    }
 }
 
-uint8_t getEnd(void)
-{
-	return End;
+int STS3215_ReadByte2(uint8_t id, uint8_t mem_addr) {
+    uint8_t dat[2];
+    int size;
+    uint16_t dat_word;
+    size = STS3215_ReadNormal(id, mem_addr, dat, 2);
+    if (size != 2) {
+        return -1;
+    }
+    dat_word = STS3215_CvrtByteToWord(dat[0], dat[1]);
+    return dat_word;
 }
 
-void setLevel(uint8_t _Level)
-{
-	Level = _Level;
+int STS3215_ReadNormal(uint8_t id, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
+    int size;
+    uint8_t buf[4];
+    uint8_t sum;
+    uint8_t i;
+
+    STS3215_FlushSerialRecvBuf();
+    STS3215_WriteBuf(id, mem_addr, &dat_len, 1, STS3215_INST_READ);
+    STS3215_FlushSerialTranBuf();
+
+    g_status_comm = 0;
+
+    if (!STS3215_CheckHead()) {
+        g_status_comm = STS3215_ERR_NO_REPLY;
+        return 0;
+    }
+    if (STS3215_ReadSerial(buf, 3) != 3) {
+        g_status_comm = STS3215_ERR_NO_REPLY;
+        return 0;
+    }
+    if (buf[0] != id && id != 0xfe) {
+        g_status_comm = STS3215_ERR_SLAVE_ID;
+        return 0;
+    }
+    if (buf[1] != (dat_len + 2)) {
+        g_status_comm = STS3215_ERR_BUFF_LEN;
+        return 0;
+    }
+
+    size = STS3215_ReadSerial(dat, dat_len);
+
+    if (size != dat_len){
+        g_status_comm = STS3215_ERR_NO_REPLY;
+        return 0;
+    }
+    if (STS3215_ReadSerial(buf + 3, 1) != 1){
+        g_status_comm = STS3215_ERR_NO_REPLY;
+        return 0;
+    }
+
+    sum = buf[0] + buf[1] + buf[2];
+
+    for (i = 0; i < size; i++) {
+        sum += dat[i];
+    }
+
+    sum = ~sum;
+
+    if (sum != buf[3]) {
+        g_status_comm = STS3215_ERR_CRC_CMP;
+        return 0;
+    }
+
+    g_status_servo = buf[2];
+
+    return size;
 }
 
-int getState(void)
-{
-	return u8Status;
+void STS3215_ReadSyncBegin(uint8_t id_len, uint8_t rx_len) {
+    g_read_sync_buf_max = id_len * (rx_len + 6);
+    g_read_sync_buf = malloc(g_read_sync_buf_max);
 }
 
-int getLastError(void)
-{
-	return u8Error;
+void STS3215_ReadSyncEnd(void) {
+    if (g_read_sync_buf) {
+        free(g_read_sync_buf);
+        g_read_sync_buf = NULL;
+    }
 }
 
-//1个16位数拆分为2个8位数
-//DataL为低位，DataH为高位
-void Host2SCS(uint8_t *DataL, uint8_t* DataH, int Data)
-{
-	if(End){
-		*DataL = (Data>>8);
-		*DataH = (Data&0xff);
-	}else{
-		*DataH = (Data>>8);
-		*DataL = (Data&0xff);
-	}
+int STS3215_WriteAsync(uint8_t id, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
+    STS3215_FlushSerialRecvBuf();
+    STS3215_WriteBuf(id, mem_addr, dat, dat_len, STS3215_INST_REG_WRITE);
+    STS3215_FlushSerialTranBuf();
+    return STS3215_Ack(id);
 }
 
-//2个8位数组合为1个16位数
-//DataL为低位，DataH为高位
-int SCS2Host(uint8_t DataL, uint8_t DataH)
-{
-	int Data;
-	if(End){
-		Data = DataL;
-		Data<<=8;
-		Data |= DataH;
-	}else{
-		Data = DataH;
-		Data<<=8;
-		Data |= DataL;
-	}
-	return Data;
+int STS3215_WriteAsyncAction(uint8_t id) {
+    STS3215_FlushSerialRecvBuf();
+    STS3215_WriteBuf(id, 0, NULL, 0, STS3215_INST_REG_ACTION);
+    STS3215_FlushSerialTranBuf();
+    return STS3215_Ack(id);
 }
 
-void writeBuf(uint8_t ID, uint8_t MemAddr, uint8_t *nDat, uint8_t nLen, uint8_t Fun)
-{
-	uint8_t i;
-	uint8_t msgLen = 2;
-	uint8_t bBuf[6];
-	uint8_t CheckSum = 0;
-	bBuf[0] = 0xff;
-	bBuf[1] = 0xff;
-	bBuf[2] = ID;
-	bBuf[4] = Fun;
-	if(nDat){
-		msgLen += nLen + 1;
-		bBuf[3] = msgLen;
-		bBuf[5] = MemAddr;
-		writeSCS(bBuf, 6);
 
-	}else{
-		bBuf[3] = msgLen;
-		writeSCS(bBuf, 5);
-	}
-	CheckSum = ID + msgLen + Fun + MemAddr;
-	if(nDat){
-		for(i=0; i<nLen; i++){
-			CheckSum += nDat[i];
-		}
-		writeSCS(nDat, nLen);
-	}
-	CheckSum = ~CheckSum;
-	writeSCS(&CheckSum, 1);
+int STS3215_writeByte1(uint8_t id, uint8_t mem_addr, uint8_t dat_byt_1) {
+    STS3215_FlushSerialRecvBuf();
+    STS3215_WriteBuf(id, mem_addr, &dat_byt_1, 1, STS3215_INST_WRITE);
+    STS3215_FlushSerialTranBuf();
+    return STS3215_Ack(id);
 }
 
-//普通写指令
-//舵机ID，MemAddr内存表地址，写入数据，写入长度
-int genWrite(uint8_t ID, uint8_t MemAddr, uint8_t *nDat, uint8_t nLen)
-{
-	rFlushSCS();
-	writeBuf(ID, MemAddr, nDat, nLen, STS3215_INST_WRITE);
-	wFlushSCS();
-	return Ack(ID);
+int STS3215_WriteByte2(uint8_t id, uint8_t mem_addr, uint16_t dat_byt_2) {
+    uint8_t buf[2];
+    STS3215_CvrtWordToByte(buf + 0, buf + 1, dat_byt_2);
+    STS3215_FlushSerialRecvBuf();
+    STS3215_WriteBuf(id, mem_addr, buf, 2, STS3215_INST_WRITE);
+    STS3215_FlushSerialTranBuf();
+    return STS3215_Ack(id);
 }
 
-//异步写指令
-//舵机ID，MemAddr内存表地址，写入数据，写入长度
-int regWrite(uint8_t ID, uint8_t MemAddr, uint8_t *nDat, uint8_t nLen)
-{
-	rFlushSCS();
-	writeBuf(ID, MemAddr, nDat, nLen, STS3215_INST_REG_WRITE);
-	wFlushSCS();
-	return Ack(ID);
+int STS3215_WriteNormal(uint8_t id, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
+    STS3215_FlushSerialRecvBuf();
+    STS3215_WriteBuf(id, mem_addr, dat, dat_len, STS3215_INST_WRITE);
+    STS3215_FlushSerialTranBuf();
+    return STS3215_Ack(id);
 }
 
-//异步写执行行
-int regAction(uint8_t ID)
-{
-	rFlushSCS();
-	writeBuf(ID, 0, NULL, 0, STS3215_INST_REG_ACTION);
-	wFlushSCS();
-	return Ack(ID);
+void STS3215_WriteSync(uint8_t id[], uint8_t id_len, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
+    uint8_t len = ((dat_len + 1) * id_len + 4);
+    uint8_t sum = 0;
+    uint8_t buf[7];
+    uint8_t i, j;
+
+    buf[0] = 0xff;
+    buf[1] = 0xff;
+    buf[2] = 0xfe;
+    buf[3] = len;
+    buf[4] = STS3215_INST_SYNC_WRITE;
+    buf[5] = mem_addr;
+    buf[6] = dat_len;
+
+    STS3215_FlushSerialRecvBuf();
+    STS3215_WriteSerial(buf, 7);
+
+    sum = 0xfe + len + STS3215_INST_SYNC_WRITE + mem_addr + dat_len;
+
+    for (i  =0; i < id_len; i++) {
+        STS3215_WriteSerial(&id[i], 1);
+        STS3215_WriteSerial(dat + i * dat_len, dat_len);
+        sum += id[i];
+        for (j = 0; j < dat_len; j++) {
+            sum += dat[i * dat_len + j];
+        }
+    }
+
+    sum = ~sum;
+
+    STS3215_WriteSerial(&sum, 1);
+    STS3215_FlushSerialTranBuf();
 }
 
-//同步写指令
-//舵机ID[]数组，IDN数组长度，MemAddr内存表地址，写入数据，写入长度
-void syncWrite(uint8_t ID[], uint8_t IDN, uint8_t MemAddr, uint8_t *nDat, uint8_t nLen)
-{
-	uint8_t mesLen = ((nLen+1)*IDN+4);
-	uint8_t Sum = 0;
-	uint8_t bBuf[7];
-	uint8_t i, j;
-
-	bBuf[0] = 0xff;
-	bBuf[1] = 0xff;
-	bBuf[2] = 0xfe;
-	bBuf[3] = mesLen;
-	bBuf[4] = STS3215_INST_SYNC_WRITE;
-	bBuf[5] = MemAddr;
-	bBuf[6] = nLen;
-
-	rFlushSCS();
-	writeSCS(bBuf, 7);
-
-	Sum = 0xfe + mesLen + STS3215_INST_SYNC_WRITE + MemAddr + nLen;
-
-	for(i=0; i<IDN; i++){
-		writeSCS(&ID[i], 1);
-		writeSCS(nDat+i*nLen, nLen);
-		Sum += ID[i];
-		for(j=0; j<nLen; j++){
-			Sum += nDat[i*nLen+j];
-		}
-	}
-	Sum = ~Sum;
-	writeSCS(&Sum, 1);
-	wFlushSCS();
+int STS3215_DecoReadPacketByte1(void) {
+    if (g_read_sync_packet_idx>=g_read_sync_packet_len) {
+        return -1;
+    }
+    return g_read_sync_packet[g_read_sync_packet_idx++];
 }
 
-int writeByte(uint8_t ID, uint8_t MemAddr, uint8_t bDat)
-{
-	rFlushSCS();
-	writeBuf(ID, MemAddr, &bDat, 1, STS3215_INST_WRITE);
-	wFlushSCS();
-	return Ack(ID);
+int STS3215_DecoReadPacketByte2(uint8_t neg_bit) {
+    if ((g_read_sync_packet_idx+1) >= g_read_sync_packet_len) {
+        return -1;
+    }
+    int word = STS3215_CvrtByteToWord(g_read_sync_packet[g_read_sync_packet_idx],
+                                      g_read_sync_packet[g_read_sync_packet_idx + 1]);
+    g_read_sync_packet_idx += 2;
+    if (neg_bit) {
+        if (word & (1 << neg_bit)) {
+            word = -(word & ~(1 << neg_bit));
+        }
+    }
+    return word;
 }
 
-int writeWord(uint8_t ID, uint8_t MemAddr, uint16_t wDat)
-{
-	uint8_t buf[2];
-	Host2SCS(buf+0, buf+1, wDat);
-	rFlushSCS();
-	writeBuf(ID, MemAddr, buf, 2, STS3215_INST_WRITE);
-	wFlushSCS();
-	return Ack(ID);
+int STS3215_Ping(uint8_t id) {
+    uint8_t buf[4];
+    uint8_t sum;
+
+    STS3215_FlushSerialRecvBuf();
+    STS3215_WriteBuf(id, 0, NULL, 0, STS3215_INST_PING);
+    STS3215_FlushSerialTranBuf();
+    g_status_servo = 0;
+
+    if (!STS3215_CheckHead()) {
+        g_status_comm = STS3215_ERR_NO_REPLY;
+        return -1;
+    }
+
+    g_status_comm = 0;
+
+    if (STS3215_ReadSerial(buf, 4) != 4) {
+        g_status_comm = STS3215_ERR_NO_REPLY;
+        return -1;
+    }
+    if (buf[0] != id && id != 0xfe) {
+        g_status_comm = STS3215_ERR_SLAVE_ID;
+        return -1;
+    }
+    if (buf[1] != 2){
+        g_status_comm = STS3215_ERR_BUFF_LEN;
+        return -1;
+    }
+
+    sum = ~(buf[0] + buf[1] + buf[2]);
+
+    if (sum != buf[3]) {
+        g_status_comm = STS3215_ERR_CRC_CMP;
+        return -1;
+    }
+
+    g_status_servo = buf[2];
+
+    return buf[0];
 }
 
-//读指令
-//舵机ID，MemAddr内存表地址，返回数据nData，数据长度nLen
-int Read(uint8_t ID, uint8_t MemAddr, uint8_t *nData, uint8_t nLen)
-{
-	int Size;
-	uint8_t bBuf[4];
-	uint8_t calSum;
-	uint8_t i;
-	rFlushSCS();
-	writeBuf(ID, MemAddr, &nLen, 1, STS3215_INST_READ);
-	wFlushSCS();
-	u8Error = 0;
-	if(!checkHead()){
-		u8Error = STS3215_ERR_NO_REPLY;
-		return 0;
-	}
-	if(readSCS(bBuf, 3)!=3){
-		u8Error = STS3215_ERR_NO_REPLY;
-		return 0;
-	}
-	if(bBuf[0]!=ID && ID!=0xfe){
-		u8Error = STS3215_ERR_SLAVE_ID;
-		return 0;
-	}
-	if(bBuf[1]!=(nLen+2)){
-		u8Error = STS3215_ERR_BUFF_LEN;
-		return 0;
-	}
-	Size = readSCS(nData, nLen);
-	if(Size!=nLen){
-		u8Error = STS3215_ERR_NO_REPLY;
-		return 0;
-	}
-	if(readSCS(bBuf+3, 1)!=1){
-		u8Error = STS3215_ERR_NO_REPLY;
-		return 0;
-	}
-	calSum = bBuf[0]+bBuf[1]+bBuf[2];
-	for(i=0; i<Size; i++){
-		calSum += nData[i];
-	}
-	calSum = ~calSum;
-	if(calSum!=bBuf[3]){
-		u8Error = STS3215_ERR_CRC_CMP;
-		return 0;
-	}
-	u8Status = bBuf[2];
-	return Size;
+int STS3215_Reset(uint8_t id) {
+    uint8_t buf[4];
+    uint8_t sum;
+
+    STS3215_FlushSerialRecvBuf();
+    STS3215_WriteBuf(id, 0, NULL, 0, STS3215_INST_RESET);
+    STS3215_FlushSerialTranBuf();
+    g_status_servo = 0;
+
+    if (!STS3215_CheckHead()) {
+        g_status_comm = STS3215_ERR_NO_REPLY;
+        return -1;
+    }
+
+    g_status_comm = 0;
+
+    if (STS3215_ReadSerial(buf, 4) != 4) {
+        g_status_comm = STS3215_ERR_NO_REPLY;
+        return -1;
+    }
+    if (buf[0] != id && id != 0xfe) {
+        g_status_comm = STS3215_ERR_SLAVE_ID;
+        return -1;
+    }
+    if (buf[1] != 2) {
+        g_status_comm = STS3215_ERR_BUFF_LEN;
+        return -1;
+    }
+
+    sum = ~(buf[0] + buf[1] + buf[2]);
+
+    if (sum != buf[3]) {
+        g_status_comm = STS3215_ERR_CRC_CMP;
+        return -1;
+    }
+
+    g_status_servo = buf[2];
+
+    return buf[0];
 }
 
-//读1字节，超时返回-1
-int readByte(uint8_t ID, uint8_t MemAddr)
-{
-	uint8_t bDat;
-	int Size = Read(ID, MemAddr, &bDat, 1);
-	if(Size!=1){
-		return -1;
-	}else{
-		return bDat;
-	}
+int STS3215_RecvReadSyncPacket(uint8_t id, uint8_t *dat) {
+    uint16_t read_sync_buf_idx = 0;
+    g_read_sync_packet = dat;
+    g_read_sync_packet_idx = 0;
+    g_status_servo = 0;
+
+    while ((read_sync_buf_idx + 6 + g_read_sync_packet_len) <= g_read_sync_buf_len) {
+        uint8_t buf[] = {0, 0, 0};
+        uint8_t sum = 0;
+        while (read_sync_buf_idx < g_read_sync_buf_len){
+            buf[0] = buf[1];
+            buf[1] = buf[2];
+            buf[2] = g_read_sync_buf[read_sync_buf_idx++];
+            if(buf[0] == 0xff && buf[1] == 0xff && buf[2] != 0xff) {
+                g_status_comm = STS3215_ERR_NO_REPLY;
+                break;
+            }
+        }
+        if (buf[2] != id) {
+            g_status_comm = STS3215_ERR_SLAVE_ID;
+            continue;
+        }
+        if (g_read_sync_buf[read_sync_buf_idx++] != (g_read_sync_packet_len + 2)) {
+            continue;
+        }
+        g_status_servo = g_read_sync_buf[read_sync_buf_idx++];
+        sum = id + (g_read_sync_packet_len + 2) + g_status_servo;
+        for (uint8_t i = 0; i < g_read_sync_packet_len; i++) {
+            g_read_sync_packet[i] = g_read_sync_buf[read_sync_buf_idx++];
+            sum += g_read_sync_packet[i];
+        }
+        sum = ~sum;
+        if (sum != g_read_sync_buf[read_sync_buf_idx++]) {
+            g_status_comm = STS3215_ERR_CRC_CMP;
+            return 0;
+        }
+        return g_read_sync_packet_len;
+    }
+
+    return 0;
 }
 
-//读2字节，超时返回-1
-int readWord(uint8_t ID, uint8_t MemAddr)
-{
-	uint8_t nDat[2];
-	int Size;
-	uint16_t wDat;
-	Size = Read(ID, MemAddr, nDat, 2);
-	if(Size!=2)
-		return -1;
-	wDat = SCS2Host(nDat[0], nDat[1]);
-	return wDat;
+int STS3215_TranReadSyncPacket(uint8_t id[], uint8_t id_len, uint8_t mem_addr, uint8_t dat_len) {
+    uint8_t sum;
+    uint8_t i;
+
+    STS3215_FlushSerialRecvBuf();
+    g_read_sync_packet_len = dat_len;
+    sum = (4 + 0xfe) + id_len + mem_addr + dat_len + STS3215_INST_SYNC_READ;
+
+    STS3215_WriteSerialByte(0xff);
+    STS3215_WriteSerialByte(0xff);
+    STS3215_WriteSerialByte(0xfe);
+    STS3215_WriteSerialByte(id_len + 4);
+    STS3215_WriteSerialByte(STS3215_INST_SYNC_READ);
+    STS3215_WriteSerialByte(mem_addr);
+    STS3215_WriteSerialByte(dat_len);
+
+    for (i = 0; i < id_len; i++) {
+        STS3215_WriteSerialByte(id[i]);
+        sum += id[i];
+    }
+
+    sum = ~sum;
+
+    STS3215_WriteSerialByte(sum);
+    STS3215_FlushSerialTranBuf();
+
+    g_read_sync_buf_len = STS3215_ReadSerial(g_read_sync_buf, g_read_sync_buf_max);
+
+    return g_read_sync_buf_len;
 }
 
-//Ping指令，返回舵机ID，超时返回-1
-int	Ping(uint8_t ID)
-{
-	uint8_t bBuf[4];
-	uint8_t calSum;
-	rFlushSCS();
-	writeBuf(ID, 0, NULL, 0, STS3215_INST_PING);
-	wFlushSCS();
-	u8Status = 0;
-	if(!checkHead()){
-		u8Error = STS3215_ERR_NO_REPLY;
-		return -1;
-	}
-	u8Error = 0;
-	if(readSCS(bBuf, 4)!=4){
-		u8Error = STS3215_ERR_NO_REPLY;
-		return -1;
-	}
-	if(bBuf[0]!=ID && ID!=0xfe){
-		u8Error = STS3215_ERR_SLAVE_ID;
-		return -1;
-	}
-	if(bBuf[1]!=2){
-		u8Error = STS3215_ERR_BUFF_LEN;
-		return -1;
-	}
-	calSum = ~(bBuf[0]+bBuf[1]+bBuf[2]);
-	if(calSum!=bBuf[3]){
-		u8Error = STS3215_ERR_CRC_CMP;
-		return -1;
-	}
-	u8Status = bBuf[2];
-	return bBuf[0];
+int STS3215_Ack(uint8_t id) {
+    uint8_t buf[4];
+    uint8_t sum;
+    g_status_comm = 0;
+
+    if (id != 0xfe && g_level) {
+        if (!STS3215_CheckHead()) {
+            g_status_comm = STS3215_ERR_NO_REPLY;
+            return 0;
+        }
+        g_status_servo = 0;
+        if (STS3215_ReadSerial(buf, 4) != 4) {
+            g_status_comm = STS3215_ERR_NO_REPLY;
+            return 0;
+        }
+        if (buf[0] != id) {
+            g_status_comm = STS3215_ERR_SLAVE_ID;
+            return 0;
+        }
+        if (buf[1]!=2) {
+            g_status_comm = STS3215_ERR_BUFF_LEN;
+            return 0;
+        }
+        sum = ~(buf[0] + buf[1] + buf[2]);
+        if (sum != buf[3]) {
+            g_status_comm = STS3215_ERR_CRC_CMP;
+            return 0;
+        }
+        g_status_servo = buf[2];
+    }
+
+    return 1;
 }
 
-//RESET指令，重置状态(清除圈数)，超时返回-1
-int	Reset(uint8_t ID)
-{
-	uint8_t bBuf[4];
-	uint8_t calSum;
-	rFlushSCS();
-	writeBuf(ID, 0, NULL, 0, STS3215_INST_RESET);
-	wFlushSCS();
-	u8Status = 0;
-	if(!checkHead()){
-		u8Error = STS3215_ERR_NO_REPLY;
-		return -1;
-	}
-	u8Error = 0;
-	if(readSCS(bBuf, 4)!=4){
-		u8Error = STS3215_ERR_NO_REPLY;
-		return -1;
-	}
-	if(bBuf[0]!=ID && ID!=0xfe){
-		u8Error = STS3215_ERR_SLAVE_ID;
-		return -1;
-	}
-	if(bBuf[1]!=2){
-		u8Error = STS3215_ERR_BUFF_LEN;
-		return -1;
-	}
-	calSum = ~(bBuf[0]+bBuf[1]+bBuf[2]);
-	if(calSum!=bBuf[3]){
-		u8Error = STS3215_ERR_CRC_CMP;
-		return -1;
-	}
-	u8Status = bBuf[2];
-	return bBuf[0];
+int STS3215_CheckHead(void) {
+    uint8_t dat;
+    uint8_t buf[2] = {0, 0};
+    uint8_t cnt = 0;
+
+    while (1) {
+        if (!STS3215_ReadSerial(&dat, 1)) {
+            return 0;
+        }
+        buf[1] = buf[0];
+        buf[0] = dat;
+        if (buf[0] == 0xff && buf[1] == 0xff) {
+            break;
+        }
+        cnt++;
+        if (cnt > 10) {
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
-int checkHead(void)
-{
-	uint8_t bDat;
-	uint8_t bBuf[2] = {0, 0};
-	uint8_t Cnt = 0;
-	while(1){
-		if(!readSCS(&bDat, 1)){
-			return 0;
-		}
-		bBuf[1] = bBuf[0];
-		bBuf[0] = bDat;
-		if(bBuf[0]==0xff && bBuf[1]==0xff){
-			break;
-		}
-		Cnt++;
-		if(Cnt>10){
-			return 0;
-		}
-	}
-	return 1;
+int STS3215_CvrtByteToWord(uint8_t dat_l, uint8_t dat_h) {
+    int dat;
+
+    if (g_end) {
+        dat = dat_l;
+        dat <<=8;
+        dat |= dat_h;
+    }
+    else {
+        dat = dat_h;
+        dat <<=8;
+        dat |= dat_l;
+    }
+
+    return dat;
 }
 
-//指令应答
-int	Ack(uint8_t ID)
-{
-	uint8_t bBuf[4];
-	uint8_t calSum;
-	u8Error = 0;
-	if(ID!=0xfe && Level){
-		if(!checkHead()){
-			u8Error = STS3215_ERR_NO_REPLY;
-			return 0;
-		}
-		u8Status = 0;
-		if(readSCS(bBuf, 4)!=4){
-			u8Error = STS3215_ERR_NO_REPLY;
-			return 0;
-		}
-		if(bBuf[0]!=ID){
-			u8Error = STS3215_ERR_SLAVE_ID;
-			return 0;
-		}
-		if(bBuf[1]!=2){
-			u8Error = STS3215_ERR_BUFF_LEN;
-			return 0;
-		}
-		calSum = ~(bBuf[0]+bBuf[1]+bBuf[2]);
-		if(calSum!=bBuf[3]){
-			u8Error = STS3215_ERR_CRC_CMP;
-			return 0;
-		}
-		u8Status = bBuf[2];
-	}
-	return 1;
+void STS3215_CvrtWordToByte(uint8_t *dat_l, uint8_t* dat_h, int dat) {
+    if (g_end) {
+        *dat_l = (dat >> 8);
+        *dat_h = (dat & 0xff);
+    }
+    else {
+        *dat_h = (dat >> 8);
+        *dat_l = (dat & 0xff);
+    }
 }
 
-int	syncReadPacketTx(uint8_t ID[], uint8_t IDN, uint8_t MemAddr, uint8_t nLen)
-{
-	uint8_t checkSum;
-	uint8_t i;
-	rFlushSCS();
-	syncReadRxPacketLen = nLen;
-	checkSum = (4+0xfe)+IDN+MemAddr+nLen+STS3215_INST_SYNC_READ;
-	writeByteSCS(0xff);
-	writeByteSCS(0xff);
-	writeByteSCS(0xfe);
-	writeByteSCS(IDN+4);
-	writeByteSCS(STS3215_INST_SYNC_READ);
-	writeByteSCS(MemAddr);
-	writeByteSCS(nLen);
-	for(i=0; i<IDN; i++){
-		writeByteSCS(ID[i]);
-		checkSum += ID[i];
-	}
-	checkSum = ~checkSum;
-	writeByteSCS(checkSum);
-	wFlushSCS();
+void STS3215_WriteBuf(uint8_t id, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len, uint8_t fun) {
+    uint8_t i;
+    uint8_t len = 2;
+    uint8_t buf[6];
+    uint8_t sum = 0;
+    buf[0] = 0xff;
+    buf[1] = 0xff;
+    buf[2] = id;
+    buf[4] = fun;
 
-	syncReadRxBuffLen = readSCS(syncReadRxBuff, syncReadRxBuffMax);
-	return syncReadRxBuffLen;
+    if (dat) {
+        len += dat_len + 1;
+        buf[3] = len;
+        buf[5] = mem_addr;
+        STS3215_WriteSerial(buf, 6);
+    }
+    else {
+        buf[3] = len;
+        STS3215_WriteSerial(buf, 5);
+    }
+
+    sum = id + len + fun + mem_addr;
+
+    if (dat) {
+        for (i = 0; i < dat_len; i++){
+            sum += dat[i];
+        }
+        STS3215_WriteSerial(dat, dat_len);
+    }
+
+    sum = ~sum;
+
+    STS3215_WriteSerial(&sum, 1);
 }
 
-void syncReadBegin(uint8_t IDN, uint8_t rxLen)
-{
-	syncReadRxBuffMax = IDN*(rxLen+6);
-	syncReadRxBuff = malloc(syncReadRxBuffMax);
+uint8_t STS3215_GetEndian(void) {
+    return g_end;
 }
 
-void syncReadEnd(void)
-{
-	if(syncReadRxBuff){
-		free(syncReadRxBuff);
-		syncReadRxBuff = NULL;
-	}
+int STS3215_GetStatusComm(void) {
+    return g_status_comm;
 }
 
-int syncReadPacketRx(uint8_t ID, uint8_t *nDat)
-{
-	uint16_t syncReadRxBuffIndex = 0;
-	syncReadRxPacket = nDat;
-	syncReadRxPacketIndex = 0;
-	u8Status = 0;
-	while((syncReadRxBuffIndex+6+syncReadRxPacketLen)<=syncReadRxBuffLen){
-		uint8_t bBuf[] = {0, 0, 0};
-		uint8_t calSum = 0;
-		while(syncReadRxBuffIndex<syncReadRxBuffLen){
-			bBuf[0] = bBuf[1];
-			bBuf[1] = bBuf[2];
-			bBuf[2] = syncReadRxBuff[syncReadRxBuffIndex++];
-			if(bBuf[0]==0xff && bBuf[1]==0xff && bBuf[2]!=0xff){
-				u8Error = STS3215_ERR_NO_REPLY;
-				break;
-			}
-		}
-		if(bBuf[2]!=ID){
-			u8Error = STS3215_ERR_SLAVE_ID;
-			continue;
-		}
-		if(syncReadRxBuff[syncReadRxBuffIndex++]!=(syncReadRxPacketLen+2)){
-			continue;
-		}
-		u8Status = syncReadRxBuff[syncReadRxBuffIndex++];
-		calSum = ID+(syncReadRxPacketLen+2)+u8Status;
-		for(uint8_t i=0; i<syncReadRxPacketLen; i++){
-			syncReadRxPacket[i] = syncReadRxBuff[syncReadRxBuffIndex++];
-			calSum += syncReadRxPacket[i];
-		}
-		calSum = ~calSum;
-		if(calSum!=syncReadRxBuff[syncReadRxBuffIndex++]){
-			u8Error = STS3215_ERR_CRC_CMP;
-			return 0;
-		}
-		return syncReadRxPacketLen;
-	}
-	return 0;
+int STS3215_GetStatusServo(void) {
+    return g_status_servo;
 }
 
-int syncReadRxPacketToByte(void)
-{
-	if(syncReadRxPacketIndex>=syncReadRxPacketLen){
-		return -1;
-	}
-	return syncReadRxPacket[syncReadRxPacketIndex++];
+void STS3215_SetEndian(uint8_t end) {
+    g_end = end;
 }
 
-int syncReadRxPacketToWrod(uint8_t negBit)
-{
-	if((syncReadRxPacketIndex+1)>=syncReadRxPacketLen){
-		return -1;
-	}
-	int Word = SCS2Host(syncReadRxPacket[syncReadRxPacketIndex], syncReadRxPacket[syncReadRxPacketIndex+1]);
-	syncReadRxPacketIndex += 2;
-	if(negBit){
-		if(Word&(1<<negBit)){
-			Word = -(Word & ~(1<<negBit));
-		}
-	}
-	return Word;
+void STS3215_SetLevel(uint8_t lev) {
+    g_level = lev;
 }

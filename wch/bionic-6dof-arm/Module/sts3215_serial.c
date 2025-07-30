@@ -5,11 +5,11 @@ uint8_t g_buf[128];
 uint8_t g_buf_len = 0;
 int     g_timeout = 5000;
 
-void STS3215_FlushRecvBuf() {
+void STS3215_FlushSerialRecvBuf() {
     while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == SET);
 }
 
-void STS3215_FlushTranBuf() {
+void STS3215_FlushSerialTranBuf() {
     if (g_buf_len) {
         for (uint8_t i = 0; i < g_buf_len; i++) {
             USART_SendData(USART1, g_buf[i]);
