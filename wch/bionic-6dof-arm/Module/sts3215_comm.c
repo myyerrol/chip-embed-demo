@@ -14,9 +14,9 @@ uint8_t *g_read_sync_buf;
 uint16_t g_read_sync_buf_len;
 uint16_t g_read_sync_buf_max;
 
-int STS3215_ReadByte1(uint8_t id, uint8_t mem_addr) {
+int STS3215_ReadByte1(uint8_t idx, uint8_t mem_addr) {
     uint8_t dat;
-    int size = STS3215_ReadNormal(id, mem_addr, &dat, 1);
+    int size = STS3215_ReadNormal(idx, mem_addr, &dat, 1);
     if (size != 1) {
         return -1;
     }
@@ -25,11 +25,11 @@ int STS3215_ReadByte1(uint8_t id, uint8_t mem_addr) {
     }
 }
 
-int STS3215_ReadByte2(uint8_t id, uint8_t mem_addr) {
+int STS3215_ReadByte2(uint8_t idx, uint8_t mem_addr) {
     uint8_t dat[2];
     int size;
     uint16_t dat_word;
-    size = STS3215_ReadNormal(id, mem_addr, dat, 2);
+    size = STS3215_ReadNormal(idx, mem_addr, dat, 2);
     if (size != 2) {
         return -1;
     }
@@ -37,14 +37,14 @@ int STS3215_ReadByte2(uint8_t id, uint8_t mem_addr) {
     return dat_word;
 }
 
-int STS3215_ReadNormal(uint8_t id, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
+int STS3215_ReadNormal(uint8_t idx, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
     int size;
     uint8_t buf[4];
     uint8_t sum;
     uint8_t i;
 
     STS3215_FlushSerialRecvBuf();
-    STS3215_WriteBuf(id, mem_addr, &dat_len, 1, STS3215_INST_READ);
+    STS3215_WriteBuf(idx, mem_addr, &dat_len, 1, STS3215_INST_READ);
     STS3215_FlushSerialTranBuf();
 
     g_status_comm = 0;
@@ -57,7 +57,7 @@ int STS3215_ReadNormal(uint8_t id, uint8_t mem_addr, uint8_t *dat, uint8_t dat_l
         g_status_comm = STS3215_ERR_NO_REPLY;
         return 0;
     }
-    if (buf[0] != id && id != 0xfe) {
+    if (buf[0] != idx && idx != 0xfe) {
         g_status_comm = STS3215_ERR_SLAVE_ID;
         return 0;
     }
@@ -107,45 +107,45 @@ void STS3215_ReadSyncEnd(void) {
     }
 }
 
-int STS3215_WriteAsync(uint8_t id, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
+int STS3215_WriteAsync(uint8_t idx, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
     STS3215_FlushSerialRecvBuf();
-    STS3215_WriteBuf(id, mem_addr, dat, dat_len, STS3215_INST_REG_WRITE);
+    STS3215_WriteBuf(idx, mem_addr, dat, dat_len, STS3215_INST_REG_WRITE);
     STS3215_FlushSerialTranBuf();
-    return STS3215_Ack(id);
+    return STS3215_Ack(idx);
 }
 
-int STS3215_WriteAsyncAction(uint8_t id) {
+int STS3215_WriteAsyncAction(uint8_t idx) {
     STS3215_FlushSerialRecvBuf();
-    STS3215_WriteBuf(id, 0, NULL, 0, STS3215_INST_REG_ACTION);
+    STS3215_WriteBuf(idx, 0, NULL, 0, STS3215_INST_REG_ACTION);
     STS3215_FlushSerialTranBuf();
-    return STS3215_Ack(id);
+    return STS3215_Ack(idx);
 }
 
 
-int STS3215_writeByte1(uint8_t id, uint8_t mem_addr, uint8_t dat_byt_1) {
+int STS3215_writeByte1(uint8_t idx, uint8_t mem_addr, uint8_t dat_byt_1) {
     STS3215_FlushSerialRecvBuf();
-    STS3215_WriteBuf(id, mem_addr, &dat_byt_1, 1, STS3215_INST_WRITE);
+    STS3215_WriteBuf(idx, mem_addr, &dat_byt_1, 1, STS3215_INST_WRITE);
     STS3215_FlushSerialTranBuf();
-    return STS3215_Ack(id);
+    return STS3215_Ack(idx);
 }
 
-int STS3215_WriteByte2(uint8_t id, uint8_t mem_addr, uint16_t dat_byt_2) {
+int STS3215_WriteByte2(uint8_t idx, uint8_t mem_addr, uint16_t dat_byt_2) {
     uint8_t buf[2];
     STS3215_CvrtWordToByte(buf + 0, buf + 1, dat_byt_2);
     STS3215_FlushSerialRecvBuf();
-    STS3215_WriteBuf(id, mem_addr, buf, 2, STS3215_INST_WRITE);
+    STS3215_WriteBuf(idx, mem_addr, buf, 2, STS3215_INST_WRITE);
     STS3215_FlushSerialTranBuf();
-    return STS3215_Ack(id);
+    return STS3215_Ack(idx);
 }
 
-int STS3215_WriteNormal(uint8_t id, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
+int STS3215_WriteNormal(uint8_t idx, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
     STS3215_FlushSerialRecvBuf();
-    STS3215_WriteBuf(id, mem_addr, dat, dat_len, STS3215_INST_WRITE);
+    STS3215_WriteBuf(idx, mem_addr, dat, dat_len, STS3215_INST_WRITE);
     STS3215_FlushSerialTranBuf();
-    return STS3215_Ack(id);
+    return STS3215_Ack(idx);
 }
 
-void STS3215_WriteSync(uint8_t id[], uint8_t id_len, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
+void STS3215_WriteSync(uint8_t idx[], uint8_t id_len, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len) {
     uint8_t len = ((dat_len + 1) * id_len + 4);
     uint8_t sum = 0;
     uint8_t buf[7];
@@ -165,9 +165,9 @@ void STS3215_WriteSync(uint8_t id[], uint8_t id_len, uint8_t mem_addr, uint8_t *
     sum = 0xfe + len + STS3215_INST_SYNC_WRITE + mem_addr + dat_len;
 
     for (i  =0; i < id_len; i++) {
-        STS3215_WriteSerial(&id[i], 1);
+        STS3215_WriteSerial(&idx[i], 1);
         STS3215_WriteSerial(dat + i * dat_len, dat_len);
-        sum += id[i];
+        sum += idx[i];
         for (j = 0; j < dat_len; j++) {
             sum += dat[i * dat_len + j];
         }
@@ -201,12 +201,12 @@ int STS3215_DecoReadPacketByte2(uint8_t neg_bit) {
     return word;
 }
 
-int STS3215_Ping(uint8_t id) {
+int STS3215_Ping(uint8_t idx) {
     uint8_t buf[4];
     uint8_t sum;
 
     STS3215_FlushSerialRecvBuf();
-    STS3215_WriteBuf(id, 0, NULL, 0, STS3215_INST_PING);
+    STS3215_WriteBuf(idx, 0, NULL, 0, STS3215_INST_PING);
     STS3215_FlushSerialTranBuf();
     g_status_servo = 0;
 
@@ -221,7 +221,7 @@ int STS3215_Ping(uint8_t id) {
         g_status_comm = STS3215_ERR_NO_REPLY;
         return -1;
     }
-    if (buf[0] != id && id != 0xfe) {
+    if (buf[0] != idx && idx != 0xfe) {
         g_status_comm = STS3215_ERR_SLAVE_ID;
         return -1;
     }
@@ -242,12 +242,12 @@ int STS3215_Ping(uint8_t id) {
     return buf[0];
 }
 
-int STS3215_Reset(uint8_t id) {
+int STS3215_Reset(uint8_t idx) {
     uint8_t buf[4];
     uint8_t sum;
 
     STS3215_FlushSerialRecvBuf();
-    STS3215_WriteBuf(id, 0, NULL, 0, STS3215_INST_RESET);
+    STS3215_WriteBuf(idx, 0, NULL, 0, STS3215_INST_RESET);
     STS3215_FlushSerialTranBuf();
     g_status_servo = 0;
 
@@ -262,7 +262,7 @@ int STS3215_Reset(uint8_t id) {
         g_status_comm = STS3215_ERR_NO_REPLY;
         return -1;
     }
-    if (buf[0] != id && id != 0xfe) {
+    if (buf[0] != idx && idx != 0xfe) {
         g_status_comm = STS3215_ERR_SLAVE_ID;
         return -1;
     }
@@ -283,7 +283,7 @@ int STS3215_Reset(uint8_t id) {
     return buf[0];
 }
 
-int STS3215_RecvReadSyncPacket(uint8_t id, uint8_t *dat) {
+int STS3215_RecvReadSyncPacket(uint8_t idx, uint8_t *dat) {
     uint16_t read_sync_buf_idx = 0;
     g_read_sync_packet = dat;
     g_read_sync_packet_idx = 0;
@@ -301,7 +301,7 @@ int STS3215_RecvReadSyncPacket(uint8_t id, uint8_t *dat) {
                 break;
             }
         }
-        if (buf[2] != id) {
+        if (buf[2] != idx) {
             g_status_comm = STS3215_ERR_SLAVE_ID;
             continue;
         }
@@ -309,7 +309,7 @@ int STS3215_RecvReadSyncPacket(uint8_t id, uint8_t *dat) {
             continue;
         }
         g_status_servo = g_read_sync_buf[read_sync_buf_idx++];
-        sum = id + (g_read_sync_packet_len + 2) + g_status_servo;
+        sum = idx + (g_read_sync_packet_len + 2) + g_status_servo;
         for (uint8_t i = 0; i < g_read_sync_packet_len; i++) {
             g_read_sync_packet[i] = g_read_sync_buf[read_sync_buf_idx++];
             sum += g_read_sync_packet[i];
@@ -325,7 +325,7 @@ int STS3215_RecvReadSyncPacket(uint8_t id, uint8_t *dat) {
     return 0;
 }
 
-int STS3215_TranReadSyncPacket(uint8_t id[], uint8_t id_len, uint8_t mem_addr, uint8_t dat_len) {
+int STS3215_TranReadSyncPacket(uint8_t idx[], uint8_t id_len, uint8_t mem_addr, uint8_t dat_len) {
     uint8_t sum;
     uint8_t i;
 
@@ -342,8 +342,8 @@ int STS3215_TranReadSyncPacket(uint8_t id[], uint8_t id_len, uint8_t mem_addr, u
     STS3215_WriteSerialByte(dat_len);
 
     for (i = 0; i < id_len; i++) {
-        STS3215_WriteSerialByte(id[i]);
-        sum += id[i];
+        STS3215_WriteSerialByte(idx[i]);
+        sum += idx[i];
     }
 
     sum = ~sum;
@@ -356,12 +356,12 @@ int STS3215_TranReadSyncPacket(uint8_t id[], uint8_t id_len, uint8_t mem_addr, u
     return g_read_sync_buf_len;
 }
 
-int STS3215_Ack(uint8_t id) {
+int STS3215_Ack(uint8_t idx) {
     uint8_t buf[4];
     uint8_t sum;
     g_status_comm = 0;
 
-    if (id != 0xfe && g_level) {
+    if (idx != 0xfe && g_level) {
         if (!STS3215_CheckHead()) {
             g_status_comm = STS3215_ERR_NO_REPLY;
             return 0;
@@ -371,7 +371,7 @@ int STS3215_Ack(uint8_t id) {
             g_status_comm = STS3215_ERR_NO_REPLY;
             return 0;
         }
-        if (buf[0] != id) {
+        if (buf[0] != idx) {
             g_status_comm = STS3215_ERR_SLAVE_ID;
             return 0;
         }
@@ -441,14 +441,14 @@ void STS3215_CvrtWordToByte(uint8_t *dat_l, uint8_t* dat_h, int dat) {
     }
 }
 
-void STS3215_WriteBuf(uint8_t id, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len, uint8_t fun) {
+void STS3215_WriteBuf(uint8_t idx, uint8_t mem_addr, uint8_t *dat, uint8_t dat_len, uint8_t fun) {
     uint8_t i;
     uint8_t len = 2;
     uint8_t buf[6];
     uint8_t sum = 0;
     buf[0] = 0xff;
     buf[1] = 0xff;
-    buf[2] = id;
+    buf[2] = idx;
     buf[4] = fun;
 
     if (dat) {
@@ -462,7 +462,7 @@ void STS3215_WriteBuf(uint8_t id, uint8_t mem_addr, uint8_t *dat, uint8_t dat_le
         STS3215_WriteSerial(buf, 5);
     }
 
-    sum = id + len + fun + mem_addr;
+    sum = idx + len + fun + mem_addr;
 
     if (dat) {
         for (i = 0; i < dat_len; i++){

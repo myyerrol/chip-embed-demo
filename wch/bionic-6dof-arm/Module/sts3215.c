@@ -1,100 +1,102 @@
-#include <string.h>
 #include <sts3215_inst.h>
 #include <sts3215_comm.h>
 #include <sts3215.h>
 
-int WritePosEx(uint8_t ID, int16_t Position, uint16_t Speed, uint8_t ACC)
-{
-	uint8_t bBuf[7];
-	if(Position<0){
-		Position = -Position;
-		Position |= (1<<15);
-	}
+int STS3215_WriteAsyncPos(uint8_t idx, int16_t pos, uint16_t spd, uint8_t acc) {
+    uint8_t buf[7];
 
-	bBuf[0] = ACC;
-	Host2SCS(bBuf+1, bBuf+2, Position);
-	Host2SCS(bBuf+3, bBuf+4, 0);
-	Host2SCS(bBuf+5, bBuf+6, Speed);
+    if (pos < 0) {
+        pos = -pos;
+        pos |= (1 << 15);
+    }
 
-	return genWrite(ID, STS3215_ACC, bBuf, 7);
+    buf[0] = acc;
+
+    STS3215_CvrtWordToByte(buf + 1, buf + 2, pos);
+    STS3215_CvrtWordToByte(buf + 3, buf + 4, 0);
+    STS3215_CvrtWordToByte(buf + 5, buf + 6, spd);
+
+    return STS3215_WriteAsync(idx, STS3215_SRAM_RW_ACC, buf, 7);
 }
 
-int RegWritePosEx(uint8_t ID, int16_t Position, uint16_t Speed, uint8_t ACC)
-{
-	uint8_t bBuf[7];
-	if(Position<0){
-		Position = -Position;
-		Position |= (1<<15);
-	}
+int STS3215_WriteNormalPos(uint8_t idx, int16_t pos, uint16_t spd, uint8_t acc) {
+    uint8_t buf[7];
 
-	bBuf[0] = ACC;
-	Host2SCS(bBuf+1, bBuf+2, Position);
-	Host2SCS(bBuf+3, bBuf+4, 0);
-	Host2SCS(bBuf+5, bBuf+6, Speed);
+    if (pos < 0) {
+        pos = -pos;
+        pos |= (1 << 15);
+    }
 
-	return regWrite(ID, STS3215_ACC, bBuf, 7);
+    buf[0] = acc;
+
+    STS3215_CvrtWordToByte(buf + 1, buf + 2, pos);
+    STS3215_CvrtWordToByte(buf + 3, buf + 4, 0);
+    STS3215_CvrtWordToByte(buf + 5, buf + 6, spd);
+
+    return STS3215_WriteNormal(idx, STS3215_SRAM_RW_ACC, buf, 7);
 }
 
-void SyncWritePosEx(uint8_t ID[], uint8_t IDN, int16_t Position[], uint16_t Speed[], uint8_t ACC[])
-{
-	uint8_t offbuf[32*7];
-	uint8_t i;
-	uint16_t V;
-  for(i = 0; i<IDN; i++){
-		if(Position[i]<0){
-			Position[i] = -Position[i];
-			Position[i] |= (1<<15);
-		}
+void STS3215_WriteSyncPos(uint8_t idx[], uint8_t id_len, int16_t pos[], uint16_t spd[], uint8_t acc[]) {
+    uint8_t buf[32 * 7];
+    uint16_t spd_tmp;
 
-		if(Speed){
-			V = Speed[i];
-		}else{
-			V = 0;
-		}
-		if(ACC){
-			offbuf[i*7] = ACC[i];
-		}else{
-			offbuf[i*7] = 0;
-		}
-		Host2SCS(offbuf+i*7+1, offbuf+i*7+2, Position[i]);
-    Host2SCS(offbuf+i*7+3, offbuf+i*7+4, 0);
-    Host2SCS(offbuf+i*7+5, offbuf+i*7+6, V);
-	}
-  syncWrite(ID, IDN, STS3215_ACC, offbuf, 7);
+    for (uint8_t i = 0; i < id_len; i++) {
+        if (pos[i] < 0) {
+            pos[i] = -pos[i];
+            pos[i] |= (1 << 15);
+        }
+
+        if (spd) {
+            spd_tmp = spd[i];
+        }
+        else {
+            spd_tmp = 0;
+        }
+
+        if (acc) {
+            buf[i * 7] = acc[i];
+        }
+        else{
+            buf[i * 7] = 0;
+        }
+
+        STS3215_CvrtWordToByte(buf + i * 7 + 1, buf + i * 7 + 2, pos[i]);
+        STS3215_CvrtWordToByte(buf + i * 7 + 3, buf + i * 7 + 4, 0);
+        STS3215_CvrtWordToByte(buf + i * 7 + 5, buf + i * 7 + 6, spd_tmp);
+    }
+
+    STS3215_WriteSync(idx, id_len, STS3215_SRAM_RW_ACC, buf, 7);
 }
 
-int WheelMode(uint8_t ID)
-{
-	return writeByte(ID, STS3215_MODE, 1);
+int STS3215_WriteWheelSpeed(uint8_t idx, int16_t spd, uint8_t acc) {
+    uint8_t buf[2];
+
+    if (spd < 0) {
+        spd = -spd;
+        spd |= (1 << 15);
+    }
+
+    buf[0] = acc;
+
+    STS3215_WriteNormal(idx, STS3215_SRAM_RW_ACC, buf, 1);
+    STS3215_CvrtWordToByte(buf + 0, buf + 1, spd);
+    STS3215_WriteNormal(idx, STS3215_SRAM_RW_GOAL_SPEED_L, buf, 2);
+
+    return 1;
 }
 
-int WriteSpe(uint8_t ID, int16_t Speed, uint8_t ACC)
-{
-	uint8_t bBuf[2];
-	if(Speed<0){
-		Speed = -Speed;
-		Speed |= (1<<15);
-	}
-	bBuf[0] = ACC;
-	genWrite(ID, STS3215_ACC, bBuf, 1);
-
-	Host2SCS(bBuf+0, bBuf+1, Speed);
-
-	genWrite(ID, STS3215_GOAL_SPEED_L, bBuf, 2);
-	return 1;
+int STS3215_SetEPROMLock(uint8_t idx) {
+    return STS3215_writeByte1(idx, STS3215_SRAM_RW_LOCK, 1);
 }
 
-int CalibrationOfs(uint8_t ID)
-{
-	return writeByte(ID, STS3215_TORQUE_ENABLE, 128);
+int STS3215_SetEPROMUnlock(uint8_t idx) {
+    return STS3215_writeByte1(idx, STS3215_SRAM_RW_LOCK, 0);
 }
 
-int unLockEpromEx(uint8_t ID)
-{
-	return writeByte(ID, STS3215_LOCK, 0);
+int STS3215_SetMiddPosCalib(uint8_t idx) {
+    return STS3215_writeByte1(idx, STS3215_SRAM_RW_TORQUE_ENABLE, 128);
 }
 
-int LockEpromEx(uint8_t ID)
-{
-	return writeByte(ID, STS3215_LOCK, 1);
+int STS3215_SetWheelSpeed(uint8_t idx) {
+    return STS3215_writeByte1(idx, STS3215_EPROM_RW_MODE, 1);
 }

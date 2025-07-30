@@ -2,14 +2,18 @@
 #include <sts3215_comm.h>
 #include <sts3215.h>
 
-void SYS_Init() {
+#ifndef TEST
+    #define TEST TEST_MOVE_DEFAULT_POS
+#endif
+
+void MAIN_InitSys(void) {
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
     SystemCoreClockUpdate();
     Delay_Init();
     Delay_Ms(2000);
 }
 
-void DRV_Init() {
+void MAIN_InitDrv(void) {
     GPIO_InitTypeDef  GPIO_InitStructure;
     USART_InitTypeDef USART_InitStructure;
 
@@ -34,146 +38,134 @@ void DRV_Init() {
     USART_Cmd(USART1, ENABLE);
 }
 
-uint8_t ID[6];
-int16_t Position[6];
-uint16_t Speed[6];
-uint8_t ACC[6];
+uint8_t  g_idx[6] = {1, 2, 3, 4, 5, 6};
+int16_t  g_pos[6];
+uint16_t g_spd[6] = {1000};
+uint8_t  g_acc[6] = {50};
 
-void testPickAndPlace() {
-    setEnd(0);//SMS_STS舵机为小端存储结构
-    ID[0] = 1;//舵机ID1
-    ID[1] = 2;//舵机ID2
-    ID[2] = 3;//舵机ID2
-    ID[3] = 4;//舵机ID2
-    ID[4] = 5;//舵机ID2
-    ID[5] = 6;//舵机ID2
-    Speed[0] = 1000;
-    Speed[1] = 1000;
-    Speed[2] = 1000;
-    Speed[3] = 1000;
-    Speed[4] = 1000;
-    Speed[5] = 1000;
-    ACC[0] = 50;
-    ACC[1] = 50;
-    ACC[2] = 50;
-    ACC[3] = 50;
-    ACC[4] = 50;
-    ACC[5] = 50;
+void MAIN_SetupTest(void) {
+    STS3215_SetEndian(0);
+}
 
+void MAIN_TestMoveDefaultPos(void) {
+    g_pos[0] = 2048;
+    g_pos[1] = 2048;
+    g_pos[2] = 2048;
+    g_pos[3] = 2048;
+    g_pos[4] = 2048;
+    g_pos[5] = 2700;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
+    Delay_Ms(2000);
 
+    g_pos[0] = 2048;
+    g_pos[1] = 2048;
+    g_pos[2] = 2048;
+    g_pos[3] = 3072;
+    g_pos[4] = 2048;
+    g_pos[5] = 2700;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
+    Delay_Ms(2000);
 
-    Position[0] = 1400;
-    Position[1] = 2522;
-    Position[2] = 2315;
-    Position[3] = 1355;
-    Position[4] = 2048;
-    Position[5] = 3900;
-    Speed[0] = 300;
-    Speed[1] = 300;
-    Speed[2] = 300;
-    Speed[3] = 300;
-    Speed[4] = 300;
-    SyncWritePosEx(ID, 6, Position, Speed, ACC);
+    g_pos[0] = 2048;
+    g_pos[1] = 1024;
+    g_pos[2] = 2048;
+    g_pos[3] = 3072;
+    g_pos[4] = 2048;
+    g_pos[5] = 2700;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
+    Delay_Ms(2000);
+
+    g_pos[5] = 3900;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
+    Delay_Ms(2000);
+
+    g_pos[5] = 2700;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
+    Delay_Ms(2000);
+}
+
+void MAIN_TestPickAndPlace(void) {
+    g_pos[0] = 1400;
+    g_pos[1] = 2522;
+    g_pos[2] = 2315;
+    g_pos[3] = 1355;
+    g_pos[4] = 2048;
+    g_pos[5] = 3900;
+    g_spd[0] = 300;
+    g_spd[1] = 300;
+    g_spd[2] = 300;
+    g_spd[3] = 300;
+    g_spd[4] = 300;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
     Delay_Ms(5000);
 
-    Position[5] = 3075;
-    Speed[0] = 1000;
-    Speed[1] = 1000;
-    Speed[2] = 1000;
-    Speed[3] = 1000;
-    Speed[4] = 1000;
-    Speed[5] = 1000;
-    SyncWritePosEx(ID, 6, Position, Speed, ACC);
+    g_pos[5] = 3075;
+    g_spd[0] = 1000;
+    g_spd[1] = 1000;
+    g_spd[2] = 1000;
+    g_spd[3] = 1000;
+    g_spd[4] = 1000;
+    g_spd[5] = 1000;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
     Delay_Ms(2000);
 
-    Position[3] = 1000;
-    SyncWritePosEx(ID, 6, Position, Speed, ACC);
+    g_pos[3] = 1000;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
     Delay_Ms(2000);
 
-    Position[1] = 1113;
-    Position[2] = 2807;
-    Position[3] = 1000;
-    SyncWritePosEx(ID, 6, Position, Speed, ACC);
+    g_pos[1] = 1113;
+    g_pos[2] = 2807;
+    g_pos[3] = 1000;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
     Delay_Ms(2000);
 
-    Position[0] = 2676;
-    Position[3] = 1000;
-    SyncWritePosEx(ID, 6, Position, Speed, ACC);
+    g_pos[0] = 2676;
+    g_pos[3] = 1000;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
     Delay_Ms(2000);
 
-    Position[1] = 2468;
-    Position[2] = 2538;
-    Position[3] = 1156;
-    SyncWritePosEx(ID, 6, Position, Speed, ACC);
+    g_pos[1] = 2468;
+    g_pos[2] = 2538;
+    g_pos[3] = 1156;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
     Delay_Ms(2000);
 
-    Position[5] = 3900;
-    Speed[5] = 200;
-    SyncWritePosEx(ID, 6, Position, Speed, ACC);
+    g_pos[5] = 3900;
+    g_spd[5] = 200;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
     Delay_Ms(3000);
 
-    Position[3] = 500;
-    Speed[5] = 1000;
-    SyncWritePosEx(ID, 6, Position, Speed, ACC);
+    g_pos[3] = 500;
+    g_spd[5] = 1000;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
     Delay_Ms(2000);
 
-    Position[0] = 2048;
-    Position[1] = 2048;
-    Position[2] = 2048;
-    Position[4] = 2048;
-    Position[5] = 2700;
-    Speed[0] = 400;
-    Speed[1] = 400;
-    Speed[2] = 400;
-    Speed[3] = 400;
-    Speed[4] = 400;
-    SyncWritePosEx(ID, 6, Position, Speed, ACC);
+    g_pos[0] = 2048;
+    g_pos[1] = 2048;
+    g_pos[2] = 2048;
+    g_pos[4] = 2048;
+    g_pos[5] = 2700;
+    g_spd[0] = 400;
+    g_spd[1] = 400;
+    g_spd[2] = 400;
+    g_spd[3] = 400;
+    g_spd[4] = 400;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
     Delay_Ms(4000);
 
-    Position[5] = 3900;
-    SyncWritePosEx(ID, 6, Position, Speed, ACC);
+    g_pos[5] = 3900;
+    STS3215_WriteSyncPos(g_idx, 6, g_pos, g_spd, g_acc);
     Delay_Ms(2000);
-
-//   // 位置1
-//   Position[0] = 2048;
-//   Position[1] = 2048;
-//   Position[2] = 2048;
-//   Position[3] = 2048;
-//   Position[4] = 2048;
-//   Position[5] = 2700;
-//   SyncWritePosEx(ID, 6, Position, Speed, ACC);
-//   Delay_Ms(2000);
-
-//   // 位置2
-//   Position[0] = 2048;
-//   Position[1] = 2048;
-//   Position[2] = 2048;
-//   Position[3] = 3072;
-//   Position[4] = 2048;
-//   Position[5] = 2700;
-//   SyncWritePosEx(ID, 6, Position, Speed, ACC);
-//   Delay_Ms(2000);
-
-//   // 位置3
-//   Position[0] = 2048;
-//   Position[1] = 1024;
-//   Position[2] = 2048;
-//   Position[3] = 3072;
-//   Position[4] = 2048;
-//   Position[5] = 2700;
-//   SyncWritePosEx(ID, 6, Position, Speed, ACC);
-//   Delay_Ms(2000);
-
-//   Position[5] = 3900;
-//   SyncWritePosEx(ID, 6, Position, Speed, ACC);
-//   Delay_Ms(2000);
-
-//   Position[5] = 2700;
-//   SyncWritePosEx(ID, 6, Position, Speed, ACC);
-//   Delay_Ms(2000);
 }
 
 int main(void) {
-    SYS_Init();
-    DRV_Init();
+    MAIN_InitSys();
+    MAIN_InitDrv();
+
+    MAIN_SetupTest();
+#if (TEST == TEST_MOVE_DEFAULT_POS)
+    MAIN_TestMoveDefaultPos();
+#elif (TEST == TEST_PICK_AND_PLACE)
+    MAIN_TestPickAndPlace();
+#endif
 }
