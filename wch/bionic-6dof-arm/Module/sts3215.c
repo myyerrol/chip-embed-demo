@@ -1,5 +1,5 @@
-#include <sts3215_inst.h>
 #include <sts3215_comm.h>
+#include <sts3215_inst.h>
 #include <sts3215.h>
 
 int STS3215_WriteAsyncPos(uint8_t idx, int16_t pos, uint16_t spd, uint8_t acc) {

@@ -2,6 +2,11 @@
 #include <sts3215_comm.h>
 #include <sts3215.h>
 
+#define TEST TEST_PICK_AND_PLACE
+
+#define TEST_MOVE_DEFAULT_POS 0
+#define TEST_PICK_AND_PLACE   1
+
 #ifndef TEST
     #define TEST TEST_MOVE_DEFAULT_POS
 #endif

@@ -4,7 +4,7 @@
 #include <ds1302.h>
 #include <ssd1309.h>
 
-void SYS_Init() {
+void MAIN_InitSys() {
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
     SystemCoreClockUpdate();
     Delay_Init();
@@ -12,7 +12,7 @@ void SYS_Init() {
     Delay_Ms(2000);
 }
 
-void MOD_Init() {
+void MAIN_InitMod() {
     DHT22_Init(GPIO_Mode_Out_PP);
     DS1302_Init();
     SSD1309_Init();
@@ -24,8 +24,8 @@ void MOD_Init() {
  * @return  None.
  */
 int main(void) {
-    SYS_Init();
-    MOD_Init();
+    MAIN_InitSys();
+    MAIN_InitMod();
 
     uint8_t size = 12;
     char    date[10];

@@ -1,5 +1,5 @@
-#include <sts3215_inst.h>
 #include <sts3215_comm.h>
+#include <sts3215_inst.h>
 #include <sts3215_serial.h>
 
 uint8_t  g_level = 1;
