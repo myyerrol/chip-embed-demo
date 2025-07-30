@@ -1,5 +1,5 @@
-#ifndef _SMS_STS_H
-#define _SMS_STS_H
+#ifndef STS3215_H
+#define STS3215_H
 
 #include <stdint.h>
 

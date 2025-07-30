@@ -1,6 +1,6 @@
-#include <stdlib.h>
 #include <sts3215_inst.h>
 #include <sts3215_comm.h>
+#include <sts3215_serial.h>
 
 static uint8_t Level =1;//舵机返回等级1,默认写指令开启应答
 static uint8_t End = 0;//处理器大小端结构,默认小端存储格式
@@ -104,7 +104,7 @@ void writeBuf(uint8_t ID, uint8_t MemAddr, uint8_t *nDat, uint8_t nLen, uint8_t 
 int genWrite(uint8_t ID, uint8_t MemAddr, uint8_t *nDat, uint8_t nLen)
 {
 	rFlushSCS();
-	writeBuf(ID, MemAddr, nDat, nLen, INST_WRITE);
+	writeBuf(ID, MemAddr, nDat, nLen, STS3215_INST_WRITE);
 	wFlushSCS();
 	return Ack(ID);
 }
@@ -114,7 +114,7 @@ int genWrite(uint8_t ID, uint8_t MemAddr, uint8_t *nDat, uint8_t nLen)
 int regWrite(uint8_t ID, uint8_t MemAddr, uint8_t *nDat, uint8_t nLen)
 {
 	rFlushSCS();
-	writeBuf(ID, MemAddr, nDat, nLen, INST_REG_WRITE);
+	writeBuf(ID, MemAddr, nDat, nLen, STS3215_INST_REG_WRITE);
 	wFlushSCS();
 	return Ack(ID);
 }
@@ -123,7 +123,7 @@ int regWrite(uint8_t ID, uint8_t MemAddr, uint8_t *nDat, uint8_t nLen)
 int regAction(uint8_t ID)
 {
 	rFlushSCS();
-	writeBuf(ID, 0, NULL, 0, INST_REG_ACTION);
+	writeBuf(ID, 0, NULL, 0, STS3215_INST_REG_ACTION);
 	wFlushSCS();
 	return Ack(ID);
 }
@@ -141,14 +141,14 @@ void syncWrite(uint8_t ID[], uint8_t IDN, uint8_t MemAddr, uint8_t *nDat, uint8_
 	bBuf[1] = 0xff;
 	bBuf[2] = 0xfe;
 	bBuf[3] = mesLen;
-	bBuf[4] = INST_SYNC_WRITE;
+	bBuf[4] = STS3215_INST_SYNC_WRITE;
 	bBuf[5] = MemAddr;
 	bBuf[6] = nLen;
 
 	rFlushSCS();
 	writeSCS(bBuf, 7);
 
-	Sum = 0xfe + mesLen + INST_SYNC_WRITE + MemAddr + nLen;
+	Sum = 0xfe + mesLen + STS3215_INST_SYNC_WRITE + MemAddr + nLen;
 
 	for(i=0; i<IDN; i++){
 		writeSCS(&ID[i], 1);
@@ -166,7 +166,7 @@ void syncWrite(uint8_t ID[], uint8_t IDN, uint8_t MemAddr, uint8_t *nDat, uint8_
 int writeByte(uint8_t ID, uint8_t MemAddr, uint8_t bDat)
 {
 	rFlushSCS();
-	writeBuf(ID, MemAddr, &bDat, 1, INST_WRITE);
+	writeBuf(ID, MemAddr, &bDat, 1, STS3215_INST_WRITE);
 	wFlushSCS();
 	return Ack(ID);
 }
@@ -176,7 +176,7 @@ int writeWord(uint8_t ID, uint8_t MemAddr, uint16_t wDat)
 	uint8_t buf[2];
 	Host2SCS(buf+0, buf+1, wDat);
 	rFlushSCS();
-	writeBuf(ID, MemAddr, buf, 2, INST_WRITE);
+	writeBuf(ID, MemAddr, buf, 2, STS3215_INST_WRITE);
 	wFlushSCS();
 	return Ack(ID);
 }
@@ -190,32 +190,32 @@ int Read(uint8_t ID, uint8_t MemAddr, uint8_t *nData, uint8_t nLen)
 	uint8_t calSum;
 	uint8_t i;
 	rFlushSCS();
-	writeBuf(ID, MemAddr, &nLen, 1, INST_READ);
+	writeBuf(ID, MemAddr, &nLen, 1, STS3215_INST_READ);
 	wFlushSCS();
 	u8Error = 0;
 	if(!checkHead()){
-		u8Error = SCS_ERR_NO_REPLY;
+		u8Error = STS3215_ERR_NO_REPLY;
 		return 0;
 	}
 	if(readSCS(bBuf, 3)!=3){
-		u8Error = SCS_ERR_NO_REPLY;
+		u8Error = STS3215_ERR_NO_REPLY;
 		return 0;
 	}
 	if(bBuf[0]!=ID && ID!=0xfe){
-		u8Error = SCS_ERR_SLAVE_ID;
+		u8Error = STS3215_ERR_SLAVE_ID;
 		return 0;
 	}
 	if(bBuf[1]!=(nLen+2)){
-		u8Error = SCS_ERR_BUFF_LEN;
+		u8Error = STS3215_ERR_BUFF_LEN;
 		return 0;
 	}
 	Size = readSCS(nData, nLen);
 	if(Size!=nLen){
-		u8Error = SCS_ERR_NO_REPLY;
+		u8Error = STS3215_ERR_NO_REPLY;
 		return 0;
 	}
 	if(readSCS(bBuf+3, 1)!=1){
-		u8Error = SCS_ERR_NO_REPLY;
+		u8Error = STS3215_ERR_NO_REPLY;
 		return 0;
 	}
 	calSum = bBuf[0]+bBuf[1]+bBuf[2];
@@ -224,7 +224,7 @@ int Read(uint8_t ID, uint8_t MemAddr, uint8_t *nData, uint8_t nLen)
 	}
 	calSum = ~calSum;
 	if(calSum!=bBuf[3]){
-		u8Error = SCS_ERR_CRC_CMP;
+		u8Error = STS3215_ERR_CRC_CMP;
 		return 0;
 	}
 	u8Status = bBuf[2];
@@ -262,29 +262,29 @@ int	Ping(uint8_t ID)
 	uint8_t bBuf[4];
 	uint8_t calSum;
 	rFlushSCS();
-	writeBuf(ID, 0, NULL, 0, INST_PING);
+	writeBuf(ID, 0, NULL, 0, STS3215_INST_PING);
 	wFlushSCS();
 	u8Status = 0;
 	if(!checkHead()){
-		u8Error = SCS_ERR_NO_REPLY;
+		u8Error = STS3215_ERR_NO_REPLY;
 		return -1;
 	}
 	u8Error = 0;
 	if(readSCS(bBuf, 4)!=4){
-		u8Error = SCS_ERR_NO_REPLY;
+		u8Error = STS3215_ERR_NO_REPLY;
 		return -1;
 	}
 	if(bBuf[0]!=ID && ID!=0xfe){
-		u8Error = SCS_ERR_SLAVE_ID;
+		u8Error = STS3215_ERR_SLAVE_ID;
 		return -1;
 	}
 	if(bBuf[1]!=2){
-		u8Error = SCS_ERR_BUFF_LEN;
+		u8Error = STS3215_ERR_BUFF_LEN;
 		return -1;
 	}
 	calSum = ~(bBuf[0]+bBuf[1]+bBuf[2]);
 	if(calSum!=bBuf[3]){
-		u8Error = SCS_ERR_CRC_CMP;
+		u8Error = STS3215_ERR_CRC_CMP;
 		return -1;
 	}
 	u8Status = bBuf[2];
@@ -297,29 +297,29 @@ int	Reset(uint8_t ID)
 	uint8_t bBuf[4];
 	uint8_t calSum;
 	rFlushSCS();
-	writeBuf(ID, 0, NULL, 0, INST_RESET);
+	writeBuf(ID, 0, NULL, 0, STS3215_INST_RESET);
 	wFlushSCS();
 	u8Status = 0;
 	if(!checkHead()){
-		u8Error = SCS_ERR_NO_REPLY;
+		u8Error = STS3215_ERR_NO_REPLY;
 		return -1;
 	}
 	u8Error = 0;
 	if(readSCS(bBuf, 4)!=4){
-		u8Error = SCS_ERR_NO_REPLY;
+		u8Error = STS3215_ERR_NO_REPLY;
 		return -1;
 	}
 	if(bBuf[0]!=ID && ID!=0xfe){
-		u8Error = SCS_ERR_SLAVE_ID;
+		u8Error = STS3215_ERR_SLAVE_ID;
 		return -1;
 	}
 	if(bBuf[1]!=2){
-		u8Error = SCS_ERR_BUFF_LEN;
+		u8Error = STS3215_ERR_BUFF_LEN;
 		return -1;
 	}
 	calSum = ~(bBuf[0]+bBuf[1]+bBuf[2]);
 	if(calSum!=bBuf[3]){
-		u8Error = SCS_ERR_CRC_CMP;
+		u8Error = STS3215_ERR_CRC_CMP;
 		return -1;
 	}
 	u8Status = bBuf[2];
@@ -356,25 +356,25 @@ int	Ack(uint8_t ID)
 	u8Error = 0;
 	if(ID!=0xfe && Level){
 		if(!checkHead()){
-			u8Error = SCS_ERR_NO_REPLY;
+			u8Error = STS3215_ERR_NO_REPLY;
 			return 0;
 		}
 		u8Status = 0;
 		if(readSCS(bBuf, 4)!=4){
-			u8Error = SCS_ERR_NO_REPLY;
+			u8Error = STS3215_ERR_NO_REPLY;
 			return 0;
 		}
 		if(bBuf[0]!=ID){
-			u8Error = SCS_ERR_SLAVE_ID;
+			u8Error = STS3215_ERR_SLAVE_ID;
 			return 0;
 		}
 		if(bBuf[1]!=2){
-			u8Error = SCS_ERR_BUFF_LEN;
+			u8Error = STS3215_ERR_BUFF_LEN;
 			return 0;
 		}
 		calSum = ~(bBuf[0]+bBuf[1]+bBuf[2]);
 		if(calSum!=bBuf[3]){
-			u8Error = SCS_ERR_CRC_CMP;
+			u8Error = STS3215_ERR_CRC_CMP;
 			return 0;
 		}
 		u8Status = bBuf[2];
@@ -388,12 +388,12 @@ int	syncReadPacketTx(uint8_t ID[], uint8_t IDN, uint8_t MemAddr, uint8_t nLen)
 	uint8_t i;
 	rFlushSCS();
 	syncReadRxPacketLen = nLen;
-	checkSum = (4+0xfe)+IDN+MemAddr+nLen+INST_SYNC_READ;
+	checkSum = (4+0xfe)+IDN+MemAddr+nLen+STS3215_INST_SYNC_READ;
 	writeByteSCS(0xff);
 	writeByteSCS(0xff);
 	writeByteSCS(0xfe);
 	writeByteSCS(IDN+4);
-	writeByteSCS(INST_SYNC_READ);
+	writeByteSCS(STS3215_INST_SYNC_READ);
 	writeByteSCS(MemAddr);
 	writeByteSCS(nLen);
 	for(i=0; i<IDN; i++){
@@ -436,12 +436,12 @@ int syncReadPacketRx(uint8_t ID, uint8_t *nDat)
 			bBuf[1] = bBuf[2];
 			bBuf[2] = syncReadRxBuff[syncReadRxBuffIndex++];
 			if(bBuf[0]==0xff && bBuf[1]==0xff && bBuf[2]!=0xff){
-				u8Error = SCS_ERR_NO_REPLY;
+				u8Error = STS3215_ERR_NO_REPLY;
 				break;
 			}
 		}
 		if(bBuf[2]!=ID){
-			u8Error = SCS_ERR_SLAVE_ID;
+			u8Error = STS3215_ERR_SLAVE_ID;
 			continue;
 		}
 		if(syncReadRxBuff[syncReadRxBuffIndex++]!=(syncReadRxPacketLen+2)){
@@ -455,7 +455,7 @@ int syncReadPacketRx(uint8_t ID, uint8_t *nDat)
 		}
 		calSum = ~calSum;
 		if(calSum!=syncReadRxBuff[syncReadRxBuffIndex++]){
-			u8Error = SCS_ERR_CRC_CMP;
+			u8Error = STS3215_ERR_CRC_CMP;
 			return 0;
 		}
 		return syncReadRxPacketLen;

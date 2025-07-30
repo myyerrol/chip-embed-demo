@@ -1,75 +1,67 @@
-#include <stdint.h>
 #include <debug.h>
+#include <sts3215_serial.h>
 
-uint8_t wBuf[128];
-uint8_t wLen = 0;
-uint32_t IOTimeOut = 5000;//通信超时
+uint8_t g_buf[128];
+uint8_t g_buf_len = 0;
+int     g_timeout = 5000;
 
-//UART 接收数据接口
-int readSCS(unsigned char *nDat, int nLen)
-{
-	int Size = 0;
-	int ComData;
-	uint32_t t_user = 0;
-	while (1) {
-		while(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET);
-		ComData = USART_ReceiveData(USART1);
-		if(ComData!=-1){
-			if(nDat){
-				nDat[Size] = ComData;
-			}
-			Size++;
-			t_user = 0;
-		}
-		if(Size>=nLen){
-			break;
-		}
-		t_user++;
-		if(t_user>IOTimeOut){
-			break;
-		}
-	}
-	return Size;
+void STS3215_FlushRecvBuf() {
+    while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == SET);
 }
 
-//UART 发送数据接口
-int writeSCS(unsigned char *nDat, int nLen)
-{
-	while(nLen--){
-		if(wLen<sizeof(wBuf)){
-			wBuf[wLen] = *nDat;
-			wLen++;
-			nDat++;
-		}
-	}
-	return wLen;
+void STS3215_FlushTranBuf() {
+    if (g_buf_len) {
+        for (uint8_t i = 0; i < g_buf_len; i++) {
+            USART_SendData(USART1, g_buf[i]);
+            while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
+        }
+        while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
+        g_buf_len = 0;
+    }
 }
 
-int writeByteSCS(unsigned char bDat)
-{
-	if(wLen<sizeof(wBuf)){
-		wBuf[wLen] = bDat;
-		wLen++;
-	}
-	return wLen;
+int STS3215_ReadSerial(uint8_t *dat, int dat_len) {
+    int size = 0;
+    int time = 0;
+    int dat_recv;
+
+    while (1) {
+        while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET);
+        dat_recv = USART_ReceiveData(USART1);
+        if (dat_recv != -1) {
+            if (dat) {
+                dat[size] = dat_recv;
+            }
+            size++;
+            time = 0;
+        }
+        if (size >= dat_len) {
+            break;
+        }
+        time++;
+        if (time > g_timeout) {
+            break;
+        }
+    }
+
+    return size;
 }
 
-//接收缓冲区刷新
-void rFlushSCS()
-{
-	// USART_ClearFlag(USART1, USART_FLAG_RXNE);
-	while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == SET);
+int STS3215_WriteSerial(uint8_t *dat, int dat_len) {
+    while (dat_len--) {
+        if (g_buf_len<sizeof(g_buf)) {
+            g_buf[g_buf_len] = *dat;
+            g_buf_len++;
+            dat++;
+        }
+    }
+    return g_buf_len;
 }
 
-//发送缓冲区刷新
-void wFlushSCS()
-{
-	if (wLen) {
-		for (uint8_t i = 0; i < wLen; i++) {
-			USART_SendData(USART1, wBuf[i]);
-			while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-		}
-		while (USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
-		wLen = 0;
-	}
+int STS3215_WriteSerialByte(uint8_t dat_byt) {
+    if(g_buf_len < sizeof(g_buf)){
+        g_buf[g_buf_len] = dat_byt;
+        g_buf_len++;
+    }
+    return g_buf_len;
 }
