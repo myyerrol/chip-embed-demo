@@ -167,18 +167,12 @@ void MAIN_TestPickAndPlace(void) {
 
 int main(void) {
     MAIN_InitSys();
-    // MAIN_InitDrv();
+    MAIN_InitDrv();
 
-//     MAIN_SetupTest();
-// #if (TEST == TEST_MOVE_DEFAULT_POS)
-//     MAIN_TestMoveDefaultPos();
-// #elif (TEST == TEST_PICK_AND_PLACE)
-//     MAIN_TestPickAndPlace();
-// #endif
-
-    IO2Config();
-    TIM5_Int_Init(BuadRate2_9600-1, 48000-1);
-    // TIM_Cmd(TIM1, ENABLE);
-
-    while (1);
+    MAIN_SetupTest();
+#if (TEST == TEST_MOVE_DEFAULT_POS)
+    MAIN_TestMoveDefaultPos();
+#elif (TEST == TEST_PICK_AND_PLACE)
+    MAIN_TestPickAndPlace();
+#endif
 }
