@@ -65,9 +65,9 @@
 				"name": "WriteSpe.c"
 			},
 			{
-				"name": "SyncWritePos.c",
 				"parentLogicPath": "Test",
-				"type": "file"
+				"type": "file",
+				"name": "SyncWritePos.c"
 			}
 		],
 		"projectName": "bionic-6dof-arm",
@@ -192,7 +192,8 @@
 							"${project}/Core",
 							"${project}/User",
 							"${project}/Peripheral/inc",
-							"${project}/Module"
+							"${project}/Module",
+							"${project}/Driver"
 						],
 						"include_system_paths": [],
 						"include_files": []

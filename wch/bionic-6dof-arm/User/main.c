@@ -1,4 +1,5 @@
 #include <debug.h>
+#include <usart_sim.h>
 #include <sts3215_comm.h>
 #include <sts3215.h>
 
@@ -15,12 +16,13 @@ void MAIN_InitSys(void) {
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
     SystemCoreClockUpdate();
     Delay_Init();
+    USART_Printf_Init(115200);
     Delay_Ms(2000);
 }
 
 void MAIN_InitDrv(void) {
-    GPIO_InitTypeDef  GPIO_InitStructure;
-    USART_InitTypeDef USART_InitStructure;
+    GPIO_InitTypeDef  GPIO_InitStructure = {0};
+    USART_InitTypeDef USART_InitStructure = {0};
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD | RCC_APB2Periph_USART1, ENABLE);
 
@@ -165,12 +167,18 @@ void MAIN_TestPickAndPlace(void) {
 
 int main(void) {
     MAIN_InitSys();
-    MAIN_InitDrv();
+    // MAIN_InitDrv();
 
-    MAIN_SetupTest();
-#if (TEST == TEST_MOVE_DEFAULT_POS)
-    MAIN_TestMoveDefaultPos();
-#elif (TEST == TEST_PICK_AND_PLACE)
-    MAIN_TestPickAndPlace();
-#endif
+//     MAIN_SetupTest();
+// #if (TEST == TEST_MOVE_DEFAULT_POS)
+//     MAIN_TestMoveDefaultPos();
+// #elif (TEST == TEST_PICK_AND_PLACE)
+//     MAIN_TestPickAndPlace();
+// #endif
+
+    IO2Config();
+    TIM5_Int_Init(BuadRate2_9600-1, 48000-1);
+    // TIM_Cmd(TIM1, ENABLE);
+
+    while (1);
 }
