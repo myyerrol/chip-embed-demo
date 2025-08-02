@@ -3,7 +3,7 @@
 #include <sts3215_comm.h>
 #include <sts3215.h>
 
-#define TEST TEST_PICK_AND_PLACE
+#define TEST TEST_MOVE_DEFAULT_POS
 
 #define TEST_MOVE_DEFAULT_POS 0
 #define TEST_PICK_AND_PLACE   1
@@ -16,7 +16,6 @@ void MAIN_InitSys(void) {
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
     SystemCoreClockUpdate();
     Delay_Init();
-    USART_Printf_Init(115200);
     Delay_Ms(2000);
 }
 
@@ -34,7 +33,7 @@ void MAIN_InitDrv(void) {
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-    USART_InitStructure.USART_BaudRate = 1000000;
+    USART_InitStructure.USART_BaudRate = 115200;
     USART_InitStructure.USART_WordLength = USART_WordLength_8b;
     USART_InitStructure.USART_StopBits = USART_StopBits_1;
     USART_InitStructure.USART_Parity = USART_Parity_No;
