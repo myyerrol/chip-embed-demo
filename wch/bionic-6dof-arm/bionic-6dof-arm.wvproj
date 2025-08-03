@@ -68,6 +68,16 @@
 				"parentLogicPath": "Test",
 				"type": "file",
 				"name": "SyncWritePos.c"
+			},
+			{
+				"parentLogicPath": "Module",
+				"type": "file",
+				"name": "ax_ps2.c"
+			},
+			{
+				"parentLogicPath": "",
+				"type": "folder",
+				"name": "Driver"
 			}
 		],
 		"projectName": "bionic-6dof-arm",
@@ -192,8 +202,7 @@
 							"${project}/Core",
 							"${project}/User",
 							"${project}/Peripheral/inc",
-							"${project}/Module",
-							"${project}/Driver"
+							"${project}/Module"
 						],
 						"include_system_paths": [],
 						"include_files": []

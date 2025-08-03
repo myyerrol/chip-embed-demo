@@ -1,0 +1,36 @@
+{
+	"details": [
+		{
+			"file": "Module/ps2_joystick.h",
+			"encoding": "gbk"
+		},
+		{
+			"file": "Module/ps2_joystick.c",
+			"encoding": "gbk"
+		},
+		{
+			"file": "Module/sts3215_comm.c",
+			"encoding": "gbk"
+		},
+		{
+			"file": "Module/sts3215_comm.h",
+			"encoding": "gbk"
+		},
+		{
+			"file": "Module/sts3215_inst.h",
+			"encoding": "gbk"
+		},
+		{
+			"file": "Module/sts3215_serial.c",
+			"encoding": "gbk"
+		},
+		{
+			"file": "Module/sts3215_serial.h",
+			"encoding": "gbk"
+		},
+		{
+			"file": "Module/sts3215.c",
+			"encoding": "gbk"
+		}
+	]
+}

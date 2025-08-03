@@ -1,12 +1,13 @@
 #include <debug.h>
-#include <usart_sim.h>
+#include <ps2_joystick.h>
 #include <sts3215_comm.h>
 #include <sts3215.h>
 
-#define TEST TEST_MOVE_DEFAULT_POS
+#define TEST TEST_PS2_JOYSTICK
 
-#define TEST_MOVE_DEFAULT_POS 0
-#define TEST_PICK_AND_PLACE   1
+#define TEST_PS2_JOYSTICK     0
+#define TEST_MOVE_DEFAULT_POS 1
+#define TEST_PICK_AND_PLACE   2
 
 #ifndef TEST
     #define TEST TEST_MOVE_DEFAULT_POS
@@ -25,23 +26,28 @@ void MAIN_InitDrv(void) {
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD | RCC_APB2Periph_USART1, ENABLE);
 
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
-    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-    GPIO_Init(GPIOD, &GPIO_InitStructure);
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_5;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF_PP;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-    USART_InitStructure.USART_BaudRate = 115200;
-    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-    USART_InitStructure.USART_StopBits = USART_StopBits_1;
-    USART_InitStructure.USART_Parity = USART_Parity_No;
-    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-    USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
+    GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_6;
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_IN_FLOATING;
+    GPIO_Init(GPIOD, &GPIO_InitStructure);
 
+    USART_InitStructure.USART_BaudRate             = 115200;
+    USART_InitStructure.USART_WordLength           = USART_WordLength_8b;
+    USART_InitStructure.USART_StopBits             = USART_StopBits_1;
+    USART_InitStructure.USART_Parity               = USART_Parity_No;
+    USART_InitStructure.USART_Mode                 = USART_Mode_Tx | USART_Mode_Rx;
+    USART_InitStructure.USART_HardwareFlowControl  = USART_HardwareFlowControl_None;
     USART_Init(USART1, &USART_InitStructure);
     USART_Cmd(USART1, ENABLE);
+}
+
+void MAIN_InitMod(void) {
+    PS2_JOYSTICK_Init();
 }
 
 uint8_t  g_idx[6] = {1, 2, 3, 4, 5, 6};
@@ -51,6 +57,11 @@ uint8_t  g_acc[6] = {50};
 
 void MAIN_SetupTest(void) {
     STS3215_SetEndian(0);
+}
+
+void MAIN_TestJoystick(void) {
+    PS2_JOYSTICK_Test();
+    Delay_Ms(50);
 }
 
 void MAIN_TestMoveDefaultPos(void) {
@@ -167,11 +178,16 @@ void MAIN_TestPickAndPlace(void) {
 int main(void) {
     MAIN_InitSys();
     MAIN_InitDrv();
+    MAIN_InitMod();
 
     MAIN_SetupTest();
-#if (TEST == TEST_MOVE_DEFAULT_POS)
-    MAIN_TestMoveDefaultPos();
+    while (1) {
+#if (TEST == TEST_PS2_JOYSTICK)
+        MAIN_TestJoystick();
+#elif (TEST == TEST_MOVE_DEFAULT_POS)
+        MAIN_TestMoveDefaultPos();
 #elif (TEST == TEST_PICK_AND_PLACE)
-    MAIN_TestPickAndPlace();
+        MAIN_TestPickAndPlace();
 #endif
+    }
 }
