@@ -17,6 +17,7 @@ void MAIN_InitSys(void) {
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
     SystemCoreClockUpdate();
     Delay_Init();
+    USART_Printf_Init(115200);
     Delay_Ms(2000);
 }
 
@@ -175,12 +176,72 @@ void MAIN_TestPickAndPlace(void) {
     Delay_Ms(2000);
 }
 
+void MAIN_TestJoystickControlFK(void) {
+    PS2_JOYSTICK_InitTypeDef PS2_JOYSTICK_InitStructure = {0};
+    PS2_JOYSTICK_ScanKey(&PS2_JOYSTICK_InitStructure);
+
+    if (PS2_JOYSTICK_InitStructure.btn_1 == 0x10) {
+        g_pos[0] += 1;
+        printf("0+\n");
+    }
+    if (PS2_JOYSTICK_InitStructure.btn_1 == 0x40) {
+        g_pos[0] -= 1;
+        printf("0-\n");
+    }
+
+    if (PS2_JOYSTICK_InitStructure.btn_1 == 0x80) {
+        g_pos[1] += 1;
+        printf("1+\n");
+    }
+    if (PS2_JOYSTICK_InitStructure.btn_1 == 0x20) {
+        g_pos[1] -= 1;
+        printf("1-\n");
+    }
+
+    if (PS2_JOYSTICK_InitStructure.btn_2 == 0x10) {
+        g_pos[2] += 1;
+        printf("2+\n");
+    }
+    if (PS2_JOYSTICK_InitStructure.btn_2 == 0x40) {
+        g_pos[2] -= 1;
+        printf("2-\n");
+    }
+
+    if (PS2_JOYSTICK_InitStructure.btn_2 == 0x80) {
+        g_pos[3] += 1;
+        printf("3+\n");
+    }
+    if (PS2_JOYSTICK_InitStructure.btn_2 == 0x20) {
+        g_pos[3] -= 1;
+        printf("3-\n");
+    }
+
+    if (PS2_JOYSTICK_InitStructure.btn_2 == 0x04) {
+        g_pos[4] += 1;
+        printf("4+\n");
+    }
+    if (PS2_JOYSTICK_InitStructure.btn_1 == 0x01) {
+        g_pos[4] -= 1;
+        printf("4-\n");
+    }
+
+    if (PS2_JOYSTICK_InitStructure.btn_1 == 0x08) {
+        g_pos[5] += 1;
+        printf("5+\n");
+    }
+    if (PS2_JOYSTICK_InitStructure.btn_1 == 0x02) {
+        g_pos[5] -= 1;
+        printf("5-\n");
+    }
+}
+
 int main(void) {
     MAIN_InitSys();
     MAIN_InitDrv();
     MAIN_InitMod();
 
     MAIN_SetupTest();
+
     while (1) {
 #if (TEST == TEST_PS2_JOYSTICK)
         MAIN_TestJoystick();
